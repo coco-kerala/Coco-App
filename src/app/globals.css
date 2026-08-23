@@ -1,26 +1,217 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --coco-green: #1b4d3e;
+  --coco-green-dark: #143d32;
+  --coco-green-light: #2d6b55;
+  --coco-leaf: #4a9b6e;
+  --coco-leaf-soft: #e8f3ec;
+  --coco-cream: #f7f3eb;
+  --coco-cream-dark: #efe8dc;
+  --coco-brown: #a67c52;
+  --coco-terracotta: #c4784a;
+  --coco-ink: #1a1f1c;
+  --coco-muted: #6b736e;
+  --coco-border: #e5dfd4;
+  --coco-white: #ffffff;
+  --coco-success: #2f8f5b;
+  --coco-warning: #d4a017;
+  --coco-danger: #c44b3c;
+  --coco-info: #3a7ca5;
+  --background: var(--coco-cream);
+  --foreground: var(--coco-ink);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-coco-green: var(--coco-green);
+  --color-coco-green-dark: var(--coco-green-dark);
+  --color-coco-green-light: var(--coco-green-light);
+  --color-coco-leaf: var(--coco-leaf);
+  --color-coco-leaf-soft: var(--coco-leaf-soft);
+  --color-coco-cream: var(--coco-cream);
+  --color-coco-cream-dark: var(--coco-cream-dark);
+  --color-coco-brown: var(--coco-brown);
+  --color-coco-terracotta: var(--coco-terracotta);
+  --color-coco-ink: var(--coco-ink);
+  --color-coco-muted: var(--coco-muted);
+  --color-coco-border: var(--coco-border);
+  --color-coco-white: var(--coco-white);
+  --color-coco-success: var(--coco-success);
+  --color-coco-warning: var(--coco-warning);
+  --color-coco-danger: var(--coco-danger);
+  --color-coco-info: var(--coco-info);
+  --font-sans: var(--font-jakarta);
+  --radius-card: 18px;
+  --shadow-soft: 0 8px 30px rgba(27, 77, 62, 0.08);
+  --shadow-card: 0 4px 20px rgba(26, 31, 28, 0.06);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: auto;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-jakarta), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--coco-leaf) 30%, white);
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.45s ease-out both;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.35s ease-out both;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.35s ease-out both;
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2s ease-in-out infinite;
+}
+
+.safe-bottom {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+/* Prevent iOS zoom on form focus */
+input,
+textarea,
+select {
+  font-size: 16px;
+}
+
+.mobile-shell {
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
+  min-height: 100dvh;
+  position: relative;
+}
+
+@media (min-width: 768px) {
+  .mobile-shell {
+    max-width: 560px;
+  }
+}
+
+.glass-nav {
+  background: color-mix(in srgb, var(--coco-white) 88%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+/* Smooth scrolling for page content */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Touch feedback for all interactive elements */
+button, a, [role="button"] {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Tailwind v4 removed the default pointer cursor on buttons — restore it */
+button:not(:disabled),
+a,
+[role="button"],
+label[for],
+summary,
+select {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+/* Smooth page transitions (native) */
+@view-transition {
+  navigation: auto;
+}
+
+/* Native dialog modal — always renders in browser top layer */
+.coco-modal::backdrop {
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.coco-modal + .coco-modal::backdrop {
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.coco-modal[open] {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+@media (min-width: 640px) {
+  .coco-modal[open] {
+    justify-content: center;
+  }
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

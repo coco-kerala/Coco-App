@@ -1,36 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# COCO — Coconut Care Platform
 
-## Getting Started
+Hyperlocal coconut plucking and care. Premium, mobile-first PWA with Customer, Worker, and Admin interfaces.
 
-First, run the development server:
+## Quick start
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Demo login
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+On `/login`, pick a role:
 
-## Learn More
+| Role | Sample user | Route |
+|------|-------------|-------|
+| Customer | Ananya Menon | `/customer` |
+| Worker | Ravi Kumar | `/worker` |
+| Admin | Priya Thomas | `/admin` |
 
-To learn more about Next.js, take a look at the following resources:
+Demo data persists in `localStorage`. Reset from Customer Profile or Admin Settings.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Core loop
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Customer requests coconut plucking  
+2. Admin assigns a worker  
+3. Worker updates status → completes with photos  
+4. Customer confirms & rates  
 
-## Deploy on Vercel
+## Stack
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Next.js 16 · React 19 · TypeScript · Tailwind CSS 4  
+- Supabase-ready (Auth, Postgres, Storage, Realtime, RLS)  
+- PWA via service worker + web manifest
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Supabase setup (optional)
+
+The app runs fully in **demo mode** without Supabase.
+
+1. Create a Supabase project  
+2. Copy `.env.example` → `.env.local` and fill keys  
+3. Run `supabase/schema.sql` then `supabase/rls.sql` in the SQL editor  
+4. Create a public Storage bucket `job-photos`  
+5. Enable Realtime for `service_requests` and `jobs` (included in schema)
+
+## Pricing
+
+```ts
+base_price + (tree_count × per_tree_price)
+// default: ₹200 + ₹150/tree
+```
+
+Configured in `src/lib/pricing.ts` (admin panel ready to extend).
+
+## Project structure
+
+```
+src/app/customer   Customer PWA
+src/app/worker     Worker PWA
+src/app/admin      Admin dashboard
+src/components     Reusable UI
+src/lib/data       Sample data + local store
+supabase/          Schema + RLS
+```
+
+## Scripts
+
+```bash
+npm run dev      # development
+npm run build    # production build
+npm run start    # serve production
+```

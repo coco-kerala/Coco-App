@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+  <rect width="400" height="400" fill="#F7F3EB"/>
+  <rect x="40" y="60" width="320" height="240" rx="24" fill="#E8F3EC"/>
+  <path d="M200 100c-30-10-55-35-65-60 40 15 60 40 65 60z" fill="#1B4D3E"/>
+  <path d="M200 100c30-10 55-35 65-60-40 15-60 40-65 60z" fill="#2D6B55"/>
+  <path d="M198 100v90" stroke="#A67C52" stroke-width="8" stroke-linecap="round"/>
+  <ellipse cx="188" cy="108" rx="10" ry="12" fill="#A67C52"/>
+  <ellipse cx="205" cy="112" rx="9" ry="11" fill="#8B6540"/>
+  <text x="200" y="340" text-anchor="middle" font-family="system-ui" font-size="18" fill="#6B736E">Trees cleared</text>
+</svg>
