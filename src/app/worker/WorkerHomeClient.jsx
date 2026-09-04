@@ -22,26 +22,39 @@ export function WorkerHomeClient({ selectedJobId }) {
     () => (ready ? getJobsByWorker(user.id).filter((j) => j.status !== "completed") : []),
     [user.id, version, ready]
   );
-  const sampleJobId = jobs[0]?.id || "job_1";
+  const firstJob = jobs[0];
 
   return (
     <>
-      <div className="px-5 pt-6">
-        <p className="text-coco-muted font-medium">{greeting}, {user.name.split(" ")[0]} 👋</p>
-        <h1 className="mt-1 text-3xl font-extrabold text-coco-ink tracking-tight">{t("worker.todaysJobs")}</h1>
+      <div className="px-5 pt-4">
+        <p className="text-coco-muted font-medium text-base">
+          {greeting}, {user.name.split(" ")[0]}
+        </p>
+        <h1 className="mt-1 text-3xl font-extrabold text-coco-ink tracking-tight">
+          {t("worker.todaysJobs")}
+        </h1>
+        <p className="mt-1 text-sm text-coco-muted">{t("worker.simpleHint")}</p>
 
-        <Card className="mt-5 bg-coco-green text-white border-0">
-          <p className="text-white/70 text-sm">{t("worker.assignedToYou")}</p>
-          <p className="text-3xl font-extrabold mt-1">
+        <Card className="mt-5 bg-coco-green text-white border-0 py-5">
+          <p className="text-white/80 text-base">{t("worker.assignedToYou")}</p>
+          <p className="text-4xl font-extrabold mt-1">
             {jobs.length} {jobs.length === 1 ? t("worker.job") : t("worker.jobs")}
           </p>
         </Card>
 
-        <Button fullWidth size="lg" className="mt-4" navTo="/worker" navParams={{ job: sampleJobId }}>
-          {t("worker.viewJobs")}
-        </Button>
+        {firstJob && (
+          <Button
+            fullWidth
+            size="lg"
+            className="mt-4 h-14 text-lg"
+            navTo="/worker"
+            navParams={{ job: firstJob.id }}
+          >
+            {t("worker.openNextJob")}
+          </Button>
+        )}
 
-        <div className="mt-6 space-y-3">
+        <div className="mt-6 space-y-4">
           {ready && jobs.length === 0 ? (
             <Card padding="none">
               <EmptyState

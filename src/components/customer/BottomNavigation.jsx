@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { Home, ClipboardList, Trees, User } from "lucide-react";
+import { Home, ClipboardList, Trees, Settings } from "lucide-react";
 import { useT } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
 
@@ -14,7 +14,7 @@ export function BottomNavigation() {
     { href: "/customer", label: t("nav.home"), icon: Home, exact: true },
     { href: "/customer/requests", label: t("nav.requests"), icon: ClipboardList },
     { href: "/customer/trees", label: t("nav.trees"), icon: Trees },
-    { href: "/customer/profile", label: t("nav.profile"), icon: User },
+    { href: "/customer/settings", label: t("nav.settings"), icon: Settings },
   ];
 
   return (

@@ -1,21 +1,23 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
 const ROLES = [
-  { role: "customer", label: "Customer", href: "/customer" },
-  { role: "worker", label: "Worker", href: "/worker" },
-  { role: "admin", label: "Admin", href: "/admin" },
+  { role: "customer", label: "Book", href: "/customer" },
+  { role: "worker", label: "Partner", href: "/worker" },
+  { role: "admin", label: "Office", href: "/admin" },
 ];
 
 export function DemoSwitcher() {
   const pathname = usePathname();
+  const router = useRouter();
   const { loginAs } = useAuth();
 
-  if (!pathname || pathname === "/" || pathname === "/login") return null;
+  if (!pathname || pathname === "/") return null;
+  if (pathname.endsWith("/login")) return null;
 
   const activeRole = pathname.startsWith("/admin")
     ? "admin"
@@ -39,19 +41,22 @@ export function DemoSwitcher() {
             {ROLES.map((r) => {
               const active = activeRole === r.role;
               return (
-                <Link
+                <button
                   key={r.role}
-                  href={r.href}
-                  onClick={() => loginAs(r.role)}
+                  type="button"
+                  onClick={() => {
+                    loginAs(r.role);
+                    router.push(r.href);
+                  }}
                   className={cn(
-                    "flex-1 rounded-xl px-2 py-1.5 text-[11px] sm:text-xs font-semibold truncate text-center no-underline transition-all duration-200",
+                    "flex-1 rounded-xl px-2 py-1.5 text-[11px] sm:text-xs font-semibold truncate text-center transition-all duration-200",
                     active
                       ? "bg-coco-green text-white shadow-sm"
                       : "bg-transparent text-coco-muted hover:bg-coco-cream hover:text-coco-ink"
                   )}
                 >
                   {r.label}
-                </Link>
+                </button>
               );
             })}
           </div>

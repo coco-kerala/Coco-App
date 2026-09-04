@@ -81,9 +81,9 @@ export function JobDetailModal({ onClose, jobId }) {
                     href={`https://www.google.com/maps/dir/?api=1&destination=${request.property.latitude},${request.property.longitude}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-coco-green"
+                    className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-coco-leaf-soft text-base font-bold text-coco-green"
                   >
-                    <Navigation size={12} /> {t("worker.openMaps")}
+                    <Navigation size={18} /> {t("worker.openMaps")}
                   </a>
                 )}
               </div>
@@ -108,8 +108,8 @@ export function JobDetailModal({ onClose, jobId }) {
               <p className="font-bold text-coco-ink">{request.customer.name}</p>
               <p className="text-sm text-coco-muted">{request.customer.phone}</p>
             </div>
-            <a href={`tel:${request.customer.phone}`} className="h-9 w-9 rounded-full bg-coco-green text-white flex items-center justify-center">
-              <Phone size={16} />
+            <a href={`tel:${request.customer.phone}`} className="h-12 w-12 rounded-full bg-coco-green text-white flex items-center justify-center shrink-0">
+              <Phone size={22} />
             </a>
           </div>
         </Card>
@@ -136,13 +136,13 @@ export function JobDetailModal({ onClose, jobId }) {
       )}
 
       {actionLabel && (
-        <Button fullWidth size="lg" className="mt-4" onClick={advance}>
-          {job.status === "assigned" && <Navigation size={18} />}
+        <Button fullWidth size="lg" className="mt-4 h-14 text-lg" onClick={advance}>
+          {job.status === "assigned" && <Navigation size={20} />}
           {actionLabel}
         </Button>
       )}
 
-      <Button variant="outline" fullWidth className="mt-2" onClick={onClose}>{t("worker.close")}</Button>
+      <Button variant="outline" fullWidth className="mt-2 h-12 text-base" onClick={onClose}>{t("worker.close")}</Button>
     </Modal>
   );
 }

@@ -10,18 +10,25 @@ function storageKey(role, suffix) {
 }
 
 export function LanguageProvider({ role, children }) {
-  const allowed = ROLE_LANGUAGES[role] || ["en"];
+  const allowed = useMemo(() => ROLE_LANGUAGES[role] || ["en"], [role]);
   const [lang, setLang] = useState("en");
   const [ready, setReady] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
+  const [mustPick, setMustPick] = useState(false);
 
   useEffect(() => {
     try {
       const picked = localStorage.getItem(storageKey(role, "picked"));
       const saved = localStorage.getItem(storageKey(role, "code"));
       if (saved && allowed.includes(saved)) setLang(saved);
-      if (!picked) setShowPicker(true);
-    } catch {}
+      if (!picked) {
+        setMustPick(true);
+        setShowPicker(true);
+      }
+    } catch {
+      setMustPick(true);
+      setShowPicker(true);
+    }
     setReady(true);
   }, [role, allowed]);
 
@@ -32,16 +39,36 @@ export function LanguageProvider({ role, children }) {
       localStorage.setItem(storageKey(role, "code"), code);
       localStorage.setItem(storageKey(role, "picked"), "1");
     } catch {}
+    setMustPick(false);
     setShowPicker(false);
   }, [role, allowed]);
 
-  const openPicker = useCallback(() => setShowPicker(true), []);
+  const openPicker = useCallback(() => {
+    setMustPick(false);
+    setShowPicker(true);
+  }, []);
+
+  const closePicker = useCallback(() => {
+    if (mustPick) return;
+    setShowPicker(false);
+  }, [mustPick]);
 
   const t = useCallback((path) => getTranslation(lang, path), [lang]);
 
   const value = useMemo(
-    () => ({ lang, role, allowed, ready, showPicker, selectLanguage, openPicker, t }),
-    [lang, role, allowed, ready, showPicker, selectLanguage, openPicker, t]
+    () => ({
+      lang,
+      role,
+      allowed,
+      ready,
+      showPicker,
+      mustPick,
+      selectLanguage,
+      openPicker,
+      closePicker,
+      t,
+    }),
+    [lang, role, allowed, ready, showPicker, mustPick, selectLanguage, openPicker, closePicker, t]
   );
 
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;

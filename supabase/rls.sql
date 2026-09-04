@@ -170,5 +170,15 @@ create policy pricing_read on public.pricing_config for select using (true);
 drop policy if exists pricing_admin on public.pricing_config;
 create policy pricing_admin on public.pricing_config for all using (public.is_admin());
 
+-- OTP SESSIONS (admin-managed WhatsApp codes)
+alter table public.otp_sessions enable row level security;
+
+drop policy if exists otp_admin_all on public.otp_sessions;
+create policy otp_admin_all on public.otp_sessions for all using (public.is_admin());
+
+-- Allow anonymous insert of OTP requests from login screens (service role preferred in production)
+drop policy if exists otp_insert_public on public.otp_sessions;
+create policy otp_insert_public on public.otp_sessions for insert with check (true);
+
 -- Storage bucket for job photos (run in dashboard or via API)
 -- insert into storage.buckets (id, name, public) values ('job-photos', 'job-photos', true);

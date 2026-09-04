@@ -12,6 +12,7 @@ import {
 } from "./sample-data";
 import { generateId } from "../utils";
 import { calculateServicePrice } from "../pricing";
+import { normalizePhone, generateOtpCode } from "@/lib/auth/otp";
 
 const STORAGE_KEY = "coco_demo_data_v2";
 
@@ -25,6 +26,7 @@ function getDefaultData() {
     payments: structuredClone(SAMPLE_PAYMENTS),
     reviews: structuredClone(SAMPLE_REVIEWS),
     workerLocations: structuredClone(WORKER_LOCATIONS),
+    otpSessions: [],
   };
 }
 
@@ -38,6 +40,7 @@ function normalize(data) {
   if (!data.requests?.length) data.requests = structuredClone(defaults.requests);
   if (!data.properties?.length) data.properties = structuredClone(defaults.properties);
   if (!data.workerLocations) data.workerLocations = structuredClone(defaults.workerLocations);
+  if (!Array.isArray(data.otpSessions)) data.otpSessions = [];
   return data;
 }
 
@@ -437,4 +440,142 @@ export function getAllProperties() {
 export function getAllPayments() {
   const data = loadData();
   return data.payments.map((p) => ({ ...p, request: data.requests.find((r) => r.id === p.request_id) }));
+}
+
+/* ─── Phone / OTP helpers (local backend until Supabase is connected) ─── */
+
+export function findUserByPhone(phone, role) {
+  const normalized = normalizePhone(phone);
+  return loadData().users.find(
+    (u) => normalizePhone(u.phone) === normalized && (!role || u.role === role)
+  );
+}
+
+export function findOrCreateUserByPhone(phone, role) {
+  const normalized = normalizePhone(phone);
+  const existing = findUserByPhone(normalized, role);
+  if (existing) return existing;
+
+  const data = loadData();
+  const user = {
+    id: generateId(`usr_${role}`),
+    name: role === "admin" ? "Office" : role === "worker" ? "Partner" : "Home",
+    phone: formatStoredPhone(normalized),
+    email: null,
+    role,
+    profile_image: null,
+    rating: role === "worker" ? 5 : undefined,
+    created_at: new Date().toISOString(),
+  };
+  data.users.push(user);
+  saveData(data);
+  return user;
+}
+
+function formatStoredPhone(normalized) {
+  if (normalized.length === 12 && normalized.startsWith("91")) {
+    return `+91 ${normalized.slice(2, 7)} ${normalized.slice(7)}`;
+  }
+  return `+${normalized}`;
+}
+
+const OTP_TTL_MS = 10 * 60 * 1000;
+
+export function createOtpSession({ phone, role }) {
+  const normalized = normalizePhone(phone);
+  if (normalized.length < 10) throw new Error("Invalid phone number");
+
+  const user = findOrCreateUserByPhone(normalized, role);
+  const data = loadData();
+
+  // Expire older pending sessions for same phone+role
+  data.otpSessions = (data.otpSessions || []).map((s) => {
+    if (s.phone === normalized && s.role === role && s.status === "pending") {
+      return { ...s, status: "expired" };
+    }
+    return s;
+  });
+
+  const session = {
+    id: generateId("otp"),
+    phone: normalized,
+    phone_display: formatStoredPhone(normalized),
+    role,
+    user_id: user.id,
+    user_name: user.name,
+    otp_code: generateOtpCode(),
+    status: "pending", // pending | sent | verified | expired
+    whatsapp_sent_at: null,
+    created_at: new Date().toISOString(),
+    expires_at: new Date(Date.now() + OTP_TTL_MS).toISOString(),
+  };
+
+  data.otpSessions.unshift(session);
+  saveData(data);
+  return session;
+}
+
+export function getOtpSessions({ status } = {}) {
+  const now = Date.now();
+  const data = loadData();
+  let list = [...(data.otpSessions || [])];
+
+  // Soft-expire
+  let changed = false;
+  list = list.map((s) => {
+    if ((s.status === "pending" || s.status === "sent") && new Date(s.expires_at).getTime() < now) {
+      changed = true;
+      return { ...s, status: "expired" };
+    }
+    return s;
+  });
+  if (changed) {
+    data.otpSessions = list;
+    saveData(data);
+  }
+
+  if (status) list = list.filter((s) => s.status === status);
+  return list.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+}
+
+export function markOtpWhatsAppSent(otpId) {
+  const data = loadData();
+  const session = data.otpSessions.find((s) => s.id === otpId);
+  if (!session) throw new Error("OTP not found");
+  session.status = session.status === "pending" ? "sent" : session.status;
+  session.whatsapp_sent_at = new Date().toISOString();
+  saveData(data);
+  return session;
+}
+
+export function verifyOtpSession({ phone, role, code }) {
+  const normalized = normalizePhone(phone);
+  const data = loadData();
+  const session = (data.otpSessions || []).find(
+    (s) =>
+      s.phone === normalized &&
+      s.role === role &&
+      (s.status === "pending" || s.status === "sent") &&
+      s.otp_code === String(code).trim()
+  );
+
+  if (!session) return { ok: false, error: "Invalid or expired OTP" };
+  if (new Date(session.expires_at).getTime() < Date.now()) {
+    session.status = "expired";
+    saveData(data);
+    return { ok: false, error: "OTP expired. Request a new one." };
+  }
+
+  session.status = "verified";
+  session.verified_at = new Date().toISOString();
+  saveData(data);
+
+  const user = data.users.find((u) => u.id === session.user_id) || findUserByPhone(normalized, role);
+  return { ok: true, user, session };
+}
+
+export function deleteProperty(propertyId) {
+  const data = loadData();
+  data.properties = data.properties.filter((p) => p.id !== propertyId);
+  saveData(data);
 }

@@ -8,7 +8,7 @@ import { Modal } from "@/components/ui/Modal";
 import { cn } from "@/lib/utils";
 
 export function LanguagePicker() {
-  const { showPicker, allowed, lang, selectLanguage, t } = useLanguage();
+  const { showPicker, allowed, lang, selectLanguage, closePicker, mustPick, t } = useLanguage();
   const [selected, setSelected] = useState(lang);
 
   useEffect(() => { setSelected(lang); }, [lang]);
@@ -16,7 +16,11 @@ export function LanguagePicker() {
   if (!showPicker) return null;
 
   return (
-    <Modal open onClose={() => {}} title={t("language.choose")}>
+    <Modal
+      open
+      onClose={mustPick ? () => {} : () => closePicker?.()}
+      title={t("language.choose")}
+    >
       <p className="text-sm text-coco-muted mb-5">{t("language.chooseSub")}</p>
       <div className="space-y-2">
         {allowed.map((code) => {

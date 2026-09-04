@@ -4,14 +4,15 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { Logo } from "@/components/brand/Logo";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, ClipboardList, Briefcase, Users, UserCheck, MapPin, CreditCard, BarChart3, Settings } from "lucide-react";
+import { LayoutDashboard, ClipboardList, Briefcase, Users, UserCheck, MapPin, CreditCard, BarChart3, Settings, KeyRound } from "lucide-react";
 
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
+  { href: "/admin/otp", label: "OTPs", icon: KeyRound },
   { href: "/admin/requests", label: "Requests", icon: ClipboardList },
   { href: "/admin/jobs", label: "Jobs", icon: Briefcase },
-  { href: "/admin/workers", label: "Workers", icon: UserCheck },
-  { href: "/admin/customers", label: "Customers", icon: Users },
+  { href: "/admin/workers", label: "Partners", icon: UserCheck },
+  { href: "/admin/customers", label: "Homes", icon: Users },
   { href: "/admin/properties", label: "Properties", icon: MapPin },
   { href: "/admin/payments", label: "Payments", icon: CreditCard },
   { href: "/admin/reports", label: "Reports", icon: BarChart3 },
@@ -57,7 +58,7 @@ export function AdminMobileNav() {
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 safe-bottom">
       <div className="mx-2 mb-2 glass-nav rounded-2xl border border-coco-border/80 shadow-[var(--shadow-soft)] overflow-x-auto">
         <div className="flex px-2 py-2 gap-1 min-w-max">
-          {navItems.slice(0, 5).map((item) => {
+          {navItems.slice(0, 6).map((item) => {
             const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
             const Icon = item.icon;
             return (
