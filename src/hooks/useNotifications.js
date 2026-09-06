@@ -49,7 +49,10 @@ export function useNotifications() {
   }, []);
 
   useEffect(() => {
-    if (!userId) return undefined;
+    if (!userId || String(userId).startsWith("usr_")) {
+      setItems([]);
+      return undefined;
+    }
     reload();
     const unsubLocal = subscribeNotifLocal(() => reload());
     let unsubRt = () => {};

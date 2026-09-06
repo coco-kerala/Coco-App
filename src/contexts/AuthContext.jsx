@@ -43,17 +43,40 @@ function writeSessions(sessions) {
   } catch {}
 }
 
+function scrubDemoAuthSessions() {
+  try {
+    const sessions = readSessions();
+    let changed = false;
+    for (const role of Object.keys(sessions)) {
+      const id = sessions[role]?.user?.id;
+      if (id && String(id).startsWith("usr_")) {
+        delete sessions[role];
+        changed = true;
+      }
+    }
+    if (changed) writeSessions(sessions);
+
+    const legacyId = localStorage.getItem(AUTH_KEY);
+    if (legacyId && String(legacyId).startsWith("usr_")) {
+      localStorage.removeItem(AUTH_KEY);
+      localStorage.removeItem(AUTH_USER_JSON);
+      localStorage.removeItem(AUTH_SESSION);
+    }
+  } catch {}
+}
+
 function migrateLegacySession() {
   try {
+    scrubDemoAuthSessions();
     const sessions = readSessions();
     const id = localStorage.getItem(AUTH_KEY);
     const ok = localStorage.getItem(AUTH_SESSION) === "1";
     const raw = localStorage.getItem(AUTH_USER_JSON);
-    if (!id || !ok) return sessions;
+    if (!id || !ok || String(id).startsWith("usr_")) return sessions;
 
     const fromJson = raw ? JSON.parse(raw) : null;
     const found = fromJson || getUserById(id);
-    if (found?.role && !sessions[found.role]) {
+    if (found?.role && found?.id && !String(found.id).startsWith("usr_") && !sessions[found.role]) {
       sessions[found.role] = { user: found, verified: true };
       writeSessions(sessions);
     }
@@ -128,6 +151,7 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     ensureAppData();
     try {
+      scrubDemoAuthSessions();
       migrateLegacySession();
     } catch {}
     setLoading(false);

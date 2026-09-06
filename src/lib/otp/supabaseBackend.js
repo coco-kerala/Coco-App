@@ -162,15 +162,17 @@ export async function requestOtpBackend({ phone, role }) {
       const { data: admins } = await supabase.from("app_users").select("id, role").eq("role", "admin");
       const { notifyUser } = await import("@/lib/notifications/notify");
       await Promise.all(
-        (admins || []).map((a) =>
-          notifyUser({
-            userId: a.id,
-            title: "New OTP request",
-            body: `${defaultName(role)} · ${formatPhoneDisplay(normalized)} — send WhatsApp code`,
-            href: "/admin/otp",
-            type: "otp",
-          })
-        )
+        (admins || [])
+          .filter((a) => a?.id && !String(a.id).startsWith("usr_"))
+          .map((a) =>
+            notifyUser({
+              userId: a.id,
+              title: "New OTP request",
+              body: `${defaultName(role)} · ${formatPhoneDisplay(normalized)} — send WhatsApp code`,
+              href: "/admin/otp",
+              type: "otp",
+            })
+          )
       );
     } catch {}
 

@@ -7,6 +7,13 @@ import { isLiveMode } from "@/lib/data/cloudSync";
 const LOCAL_KEY = "kerago_notifications_v1";
 const EVENT = "kerago-notif-change";
 
+/** One live channel per userId — shared by every hook that listens. */
+const realtimeByUser = new Map();
+
+function isDemoUserId(userId) {
+  return !userId || String(userId).startsWith("usr_");
+}
+
 function readLocal() {
   if (typeof window === "undefined") return [];
   try {
@@ -33,7 +40,7 @@ function showBrowser(title, body) {
 
 /** Persist + show one notification for a user (local + Supabase). */
 export async function notifyUser({ userId, title, body = "", href = null, type = "update" }) {
-  if (!userId || !title) return null;
+  if (!userId || !title || isDemoUserId(userId)) return null;
 
   const entry = {
     id: generateId("n"),
@@ -46,7 +53,6 @@ export async function notifyUser({ userId, title, body = "", href = null, type =
     created_at: new Date().toISOString(),
   };
 
-  // Local mirror for current device (also used when cloud offline)
   const local = readLocal();
   local.unshift({
     id: entry.id,
@@ -59,7 +65,6 @@ export async function notifyUser({ userId, title, body = "", href = null, type =
   });
   writeLocal(local);
 
-  // Browser toast if this device is the recipient
   try {
     const me = localStorage.getItem("coco_auth_user_id");
     if (me && me === userId) showBrowser(title, body);
@@ -87,7 +92,9 @@ export async function notifyUser({ userId, title, body = "", href = null, type =
 
 /** Notify every admin (office). */
 export async function notifyAdmins({ title, body, href, type }, users) {
-  const admins = (users || []).filter((u) => u.role === "admin");
+  const admins = (users || []).filter(
+    (u) => u.role === "admin" && !isDemoUserId(u.id)
+  );
   await Promise.all(
     admins.map((a) => notifyUser({ userId: a.id, title, body, href, type }))
   );
@@ -106,7 +113,7 @@ export function markLocalNotificationsRead(userId) {
 }
 
 export async function fetchCloudNotifications(userId) {
-  if (!userId || !isLiveMode()) return [];
+  if (!userId || isDemoUserId(userId) || !isLiveMode()) return [];
   const sb = getSupabaseClient();
   if (!sb) return [];
   const { data, error } = await sb
@@ -131,7 +138,7 @@ export async function fetchCloudNotifications(userId) {
 }
 
 export async function markCloudNotificationsRead(userId) {
-  if (!userId || !isLiveMode()) return;
+  if (!userId || isDemoUserId(userId) || !isLiveMode()) return;
   const sb = getSupabaseClient();
   if (!sb) return;
   await sb.from("notifications").update({ read: true }).eq("user_id", userId).eq("read", false);
@@ -144,65 +151,90 @@ export function subscribeNotifLocal(cb) {
   return () => window.removeEventListener(EVENT, handler);
 }
 
-/** Realtime: new notifications for this user → merge + browser ping */
+function handleRealtimeRow(payload, onRow) {
+  try {
+    const n = payload.new;
+    if (!n) return;
+    const entry = {
+      id: n.id,
+      userId: n.user_id,
+      title: n.title,
+      body: n.body || "",
+      href: n.href,
+      createdAt: n.created_at,
+      read: !!n.read,
+    };
+    const local = readLocal();
+    if (!local.some((x) => x.id === entry.id)) {
+      local.unshift(entry);
+      writeLocal(local);
+    }
+    showBrowser(entry.title, entry.body);
+    onRow?.(entry);
+  } catch (e) {
+    console.warn("[kerago] notif callback:", e);
+  }
+}
+
+/**
+ * Realtime for this user. Shared singleton per userId so Strict Mode /
+ * NotifBell never call .on() after subscribe() on the same channel.
+ */
 export function subscribeNotifRealtime(userId, onRow) {
-  if (!userId || !isLiveMode()) return () => {};
+  if (!userId || isDemoUserId(userId) || !isLiveMode()) return () => {};
   const sb = getSupabaseClient();
   if (!sb) return () => {};
 
-  // Unique name each time — React Strict Mode / multiple hooks must not
-  // re-use a channel that already called subscribe().
-  const name = `notif:${userId}:${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-  let channel = null;
+  let entry = realtimeByUser.get(userId);
+  if (!entry) {
+    const name = `notif_${String(userId).replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 36)}_${Date.now()}`;
+    const listeners = new Set();
+    let channel = null;
 
-  try {
-    channel = sb
-      .channel(name)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "notifications",
-          filter: `user_id=eq.${userId}`,
-        },
-        (payload) => {
-          try {
-            const n = payload.new;
-            if (!n) return;
-            const entry = {
-              id: n.id,
-              userId: n.user_id,
-              title: n.title,
-              body: n.body || "",
-              href: n.href,
-              createdAt: n.created_at,
-              read: !!n.read,
-            };
-            const local = readLocal();
-            if (!local.some((x) => x.id === entry.id)) {
-              local.unshift(entry);
-              writeLocal(local);
-            }
-            showBrowser(entry.title, entry.body);
-            onRow?.(entry);
-          } catch (e) {
-            console.warn("[kerago] notif callback:", e);
+    try {
+      channel = sb
+        .channel(name)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "notifications",
+            filter: `user_id=eq.${userId}`,
+          },
+          (payload) => {
+            const current = realtimeByUser.get(userId);
+            if (!current) return;
+            current.listeners.forEach((fn) => {
+              try {
+                handleRealtimeRow(payload, fn);
+              } catch {}
+            });
           }
-        }
-      )
-      .subscribe((status, err) => {
-        if (err) console.warn("[kerago] notif subscribe:", err.message || err);
-        if (status === "CHANNEL_ERROR") console.warn("[kerago] notif channel error");
-      });
-  } catch (e) {
-    console.warn("[kerago] notif realtime skipped:", e?.message || e);
-    return () => {};
+        )
+        .subscribe((status, err) => {
+          if (err) console.warn("[kerago] notif subscribe:", err.message || err);
+          if (status === "CHANNEL_ERROR") console.warn("[kerago] notif channel error");
+        });
+    } catch (e) {
+      console.warn("[kerago] notif realtime skipped:", e?.message || e);
+      return () => {};
+    }
+
+    entry = { channel, listeners, sb };
+    realtimeByUser.set(userId, entry);
   }
 
+  if (typeof onRow === "function") entry.listeners.add(onRow);
+
   return () => {
+    const current = realtimeByUser.get(userId);
+    if (!current) return;
+    if (typeof onRow === "function") current.listeners.delete(onRow);
+    if (current.listeners.size > 0) return;
+    realtimeByUser.delete(userId);
     try {
-      if (channel) sb.removeChannel(channel);
+      if (current.channel) current.sb.removeChannel(current.channel);
     } catch {}
   };
 }

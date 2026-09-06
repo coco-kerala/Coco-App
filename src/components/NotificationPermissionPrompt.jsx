@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Bell } from "lucide-react";
 import { useT } from "@/contexts/LanguageContext";
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
-import { useNotifications } from "@/hooks/useNotifications";
+import { useNotificationPermission } from "@/hooks/useNotificationPermission";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 
@@ -12,11 +12,12 @@ const SESSION_KEY = "kerago_notif_session_dismiss";
 
 /**
  * Ask for alerts only after the app is installed (home screen / standalone).
+ * Does not open a realtime channel (avoids clashing with NotifBell).
  */
 export function NotificationPermissionPrompt({ delayMs = 900 }) {
   const { t } = useT();
   const { installed } = useInstallPrompt();
-  const { permission, requestPermission } = useNotifications();
+  const { permission, requestPermission } = useNotificationPermission();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -51,7 +52,7 @@ export function NotificationPermissionPrompt({ delayMs = 900 }) {
         <p className="text-sm text-coco-muted leading-relaxed">{t("notif.promptBody")}</p>
         {permission === "denied" && (
           <p className="mt-3 text-xs font-semibold text-coco-shell leading-relaxed">
-            {t("notif.deniedHint") || "Alerts are blocked. Open phone Settings → site → allow notifications, then refresh."}
+            {t("notif.deniedHint") || "Alerts are blocked. Open phone Settings → this site → allow notifications, then refresh."}
           </p>
         )}
       </div>

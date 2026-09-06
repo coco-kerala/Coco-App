@@ -2,7 +2,7 @@
 // Keep fetch as network-pass-through only — do not cache navigations
 // (Safari can show "This page couldn't load" if fetch interception fails).
 
-const VERSION = "kerago-sw-v4";
+const VERSION = "kerago-sw-v5";
 
 self.addEventListener("install", () => {
   self.skipWaiting();

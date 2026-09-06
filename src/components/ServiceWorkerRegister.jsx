@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 
-const SW_URL = "/sw.js?v=4";
+const SW_URL = "/sw.js?v=5";
 
 export function ServiceWorkerRegister() {
   useEffect(() => {
@@ -14,7 +14,7 @@ export function ServiceWorkerRegister() {
         await Promise.all(
           regs.map(async (reg) => {
             const script = reg.active?.scriptURL || reg.waiting?.scriptURL || "";
-            if (!script.includes("v=4")) {
+            if (!script.includes("v=5")) {
               await reg.unregister();
             }
           })
