@@ -32,7 +32,7 @@ export default function CustomerLayout({ children }) {
       ) : (
         <RequireAuth role="customer">
           <div className="min-h-dvh bg-coco-cream">
-            <div className="mobile-shell pt-14 pb-28">{children}</div>
+            <div className="mobile-shell pt-2 pb-28">{children}</div>
             <BottomNavigation />
             <InstallHomePrompt />
             <NotificationPermissionPrompt />

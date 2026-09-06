@@ -12,7 +12,7 @@ export default function AdminLayout({ children }) {
     <RequireAuth role="admin">
       <div className="min-h-dvh bg-coco-cream flex">
         <AdminSidebar />
-        <div className="flex-1 pt-14 lg:pt-0 pb-24 lg:pb-8 overflow-x-hidden">
+        <div className="flex-1 pt-2 lg:pt-0 pb-24 lg:pb-8 overflow-x-hidden">
           {children}
         </div>
         <AdminMobileNav />

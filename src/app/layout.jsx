@@ -1,7 +1,6 @@
 import { Plus_Jakarta_Sans, Fredoka } from "next/font/google";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
-import { DemoSwitcher } from "@/components/DemoSwitcher";
 import "./globals.css";
 
 const jakarta = Plus_Jakarta_Sans({
@@ -38,7 +37,6 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className={`${jakarta.variable} ${brand.variable} font-sans antialiased`}>
         <AuthProvider>
-          <DemoSwitcher />
           {children}
           <ServiceWorkerRegister />
         </AuthProvider>

@@ -38,7 +38,7 @@ function PartnerShell({ children }) {
 
   return (
     <div className="min-h-dvh bg-coco-cream">
-      <div className="mobile-shell pt-14 pb-28">
+      <div className="mobile-shell pt-2 pb-28">
         <header className="flex items-center justify-between px-5 pt-3">
           <Logo size="sm" />
           <div className="flex items-center gap-2">
