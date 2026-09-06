@@ -11,15 +11,16 @@ export default function AdminLayout({ children }) {
     <RequireOffice>
       <div className="min-h-dvh bg-coco-cream flex">
         <AdminSidebar />
-        <div className="flex-1 pt-2 lg:pt-0 pb-24 lg:pb-8 overflow-x-hidden">
+        <div className="flex-1 pt-2 lg:pt-0 pb-24 lg:pb-8 overflow-x-hidden min-w-0">
           <div className="flex justify-end px-5 pt-3 lg:px-8">
             <NotifBell href="/admin/notifications" />
           </div>
           {children}
         </div>
         <AdminMobileNav />
-        <InstallHomePrompt delayMs={500} forcePhoneOnly={false} />
-        <NotificationPermissionPrompt delayMs={1600} />
+        {/* Delay prompts so dashboard paints first (avoids mobile tab crash) */}
+        <InstallHomePrompt delayMs={2500} forcePhoneOnly={false} />
+        <NotificationPermissionPrompt delayMs={4500} />
       </div>
     </RequireOffice>
   );

@@ -1,6 +1,5 @@
-// Minimal service worker — required for Android "Install app" prompt.
-// Network-only fetch handler (no caching) to avoid stale JS / hydration issues.
-// Notification click opens the app (full push needs FCM / OneSignal later).
+// Minimal service worker — enables install prompt.
+// Never break navigations if the network fails.
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
@@ -11,7 +10,22 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
-  event.respondWith(fetch(event.request));
+  const req = event.request;
+  // Only handle GET; let browser handle the rest normally
+  if (req.method !== "GET") return;
+
+  event.respondWith(
+    fetch(req).catch(() => {
+      // Avoid hard crash pages when offline / flaky network
+      if (req.mode === "navigate") {
+        return new Response(
+          "<!doctype html><title>KeraGo</title><p style='font-family:sans-serif;padding:2rem'>Network error. Check connection and reload.</p>",
+          { headers: { "Content-Type": "text/html; charset=utf-8" } }
+        );
+      }
+      return Response.error();
+    })
+  );
 });
 
 self.addEventListener("notificationclick", (event) => {

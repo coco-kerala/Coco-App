@@ -540,15 +540,19 @@ export function getAvailableWorkersForRequest(requestId) {
 export function getAdminMetrics() {
   const data = loadData();
   const today = new Date().toISOString().slice(0, 10);
-  const requests = data.requests;
+  const requests = data.requests || [];
+  const locations = data.workerLocations && typeof data.workerLocations === "object"
+    ? data.workerLocations
+    : {};
+  const payments = data.payments || [];
   return {
     newRequests: requests.filter((r) => r.status === "new").length,
     unassigned: requests.filter((r) => r.status === "unassigned").length,
     assigned: requests.filter((r) => r.status === "assigned").length,
     inProgress: requests.filter((r) => ["on_the_way", "arrived", "in_progress"].includes(r.status)).length,
-    completedToday: requests.filter((r) => (r.status === "completed" || r.status === "confirmed") && r.updated_at.startsWith(today)).length,
-    availableWorkers: Object.values(data.workerLocations).filter((w) => w.status === "available").length,
-    todaysRevenue: data.payments.filter((p) => p.status === "paid" && p.paid_at?.startsWith(today)).reduce((sum, p) => sum + p.amount, 0),
+    completedToday: requests.filter((r) => (r.status === "completed" || r.status === "confirmed") && String(r.updated_at || "").startsWith(today)).length,
+    availableWorkers: Object.values(locations).filter((w) => w && w.status === "available").length,
+    todaysRevenue: payments.filter((p) => p.status === "paid" && p.paid_at && String(p.paid_at).startsWith(today)).reduce((sum, p) => sum + (Number(p.amount) || 0), 0),
   };
 }
 

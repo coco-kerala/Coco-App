@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { subscribeToData, replaceAppData, ensureAppData } from "@/lib/data/store";
+import { subscribeToData, replaceAppData, ensureAppData, getAppData } from "@/lib/data/store";
 import { isLiveMode, pullCloudData } from "@/lib/data/cloudSync";
+import { mergeCloudIntoLocal } from "@/lib/data/mergeCloud";
 
 export function useAppData() {
   const [version, setVersion] = useState(0);
@@ -12,12 +13,17 @@ export function useAppData() {
     let cancelled = false;
 
     (async () => {
-      ensureAppData();
-      if (isLiveMode()) {
-        const cloud = await pullCloudData();
-        if (!cancelled && cloud) {
-          replaceAppData(cloud);
+      try {
+        ensureAppData();
+        if (isLiveMode()) {
+          const cloud = await pullCloudData();
+          if (!cancelled && cloud) {
+            const merged = mergeCloudIntoLocal(getAppData(), cloud);
+            replaceAppData(merged);
+          }
         }
+      } catch (e) {
+        console.warn("[useAppData]", e);
       }
       if (!cancelled) setReady(true);
     })();

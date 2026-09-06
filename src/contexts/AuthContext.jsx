@@ -27,6 +27,34 @@ async function ensureOfficeUser() {
   let admin = data.users.find((u) => u.role === "admin");
   if (admin) return admin;
 
+  if (isLiveMode()) {
+    const sb = getSupabaseClient();
+    if (sb) {
+      try {
+        const { data: rows } = await sb.from("app_users").select("*").eq("role", "admin").limit(1);
+        if (rows?.[0]) {
+          admin = {
+            id: rows[0].id,
+            name: rows[0].name || "Office",
+            phone: rows[0].phone_display || rows[0].phone || "office",
+            email: rows[0].email || "office@kerago.in",
+            role: "admin",
+            profile_image: rows[0].profile_image || null,
+            created_at: rows[0].created_at,
+          };
+          const next = getAppData();
+          if (!next.users.some((u) => u.id === admin.id)) {
+            next.users.push(admin);
+            replaceAppData(next);
+          }
+          return admin;
+        }
+      } catch (e) {
+        console.warn("[office] cloud lookup failed", e);
+      }
+    }
+  }
+
   admin = {
     id: generateId(),
     name: "Office",
@@ -36,25 +64,25 @@ async function ensureOfficeUser() {
     profile_image: null,
     created_at: new Date().toISOString(),
   };
-  data.users.push(admin);
-  replaceAppData(data);
+  const next = getAppData();
+  next.users.push(admin);
+  replaceAppData(next);
 
   if (isLiveMode()) {
     const sb = getSupabaseClient();
     if (sb) {
-      try {
-        await sb.from("app_users").upsert(
-          {
-            id: admin.id,
-            name: admin.name,
-            phone: "office",
-            phone_display: "Office",
-            email: admin.email,
-            role: "admin",
-          },
-          { onConflict: "id" }
-        );
-      } catch {}
+      const { error } = await sb.from("app_users").upsert(
+        {
+          id: admin.id,
+          name: admin.name,
+          phone: "office",
+          phone_display: "Office",
+          email: admin.email,
+          role: "admin",
+        },
+        { onConflict: "id" }
+      );
+      if (error) console.warn("[office] upsert:", error.message);
     }
   }
   return admin;
