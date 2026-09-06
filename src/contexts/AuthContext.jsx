@@ -22,40 +22,14 @@ const AUTH_SESSION = "coco_auth_verified";
 const AUTH_USER_JSON = "coco_auth_user_json";
 const AuthContext = createContext(null);
 
-async function ensureOfficeUser() {
-  const data = getAppData();
-  let admin = data.users.find((u) => u.role === "admin");
-  if (admin) return admin;
+function ensureOfficeUserSync() {
+  try {
+    const data = getAppData();
+    const existing = data.users.find((u) => u.role === "admin");
+    if (existing) return existing;
+  } catch {}
 
-  if (isLiveMode()) {
-    const sb = getSupabaseClient();
-    if (sb) {
-      try {
-        const { data: rows } = await sb.from("app_users").select("*").eq("role", "admin").limit(1);
-        if (rows?.[0]) {
-          admin = {
-            id: rows[0].id,
-            name: rows[0].name || "Office",
-            phone: rows[0].phone_display || rows[0].phone || "office",
-            email: rows[0].email || "office@kerago.in",
-            role: "admin",
-            profile_image: rows[0].profile_image || null,
-            created_at: rows[0].created_at,
-          };
-          const next = getAppData();
-          if (!next.users.some((u) => u.id === admin.id)) {
-            next.users.push(admin);
-            replaceAppData(next);
-          }
-          return admin;
-        }
-      } catch (e) {
-        console.warn("[office] cloud lookup failed", e);
-      }
-    }
-  }
-
-  admin = {
+  const admin = {
     id: generateId(),
     name: "Office",
     phone: "office",
@@ -64,28 +38,36 @@ async function ensureOfficeUser() {
     profile_image: null,
     created_at: new Date().toISOString(),
   };
-  const next = getAppData();
-  next.users.push(admin);
-  replaceAppData(next);
 
-  if (isLiveMode()) {
-    const sb = getSupabaseClient();
-    if (sb) {
-      const { error } = await sb.from("app_users").upsert(
-        {
-          id: admin.id,
-          name: admin.name,
-          phone: "office",
-          phone_display: "Office",
-          email: admin.email,
-          role: "admin",
-        },
-        { onConflict: "id" }
-      );
-      if (error) console.warn("[office] upsert:", error.message);
-    }
-  }
+  try {
+    const next = getAppData();
+    next.users.push(admin);
+    replaceAppData(next);
+  } catch {}
+
   return admin;
+}
+
+function syncOfficeUserToCloud(admin) {
+  if (!isLiveMode() || !admin?.id) return;
+  const sb = getSupabaseClient();
+  if (!sb) return;
+  sb.from("app_users")
+    .upsert(
+      {
+        id: admin.id,
+        name: admin.name,
+        phone: "office",
+        phone_display: "Office",
+        email: admin.email,
+        role: "admin",
+      },
+      { onConflict: "id" }
+    )
+    .then(({ error }) => {
+      if (error) console.warn("[office] upsert:", error.message);
+    })
+    .catch(() => {});
 }
 
 export function AuthProvider({ children }) {
@@ -152,10 +134,11 @@ export function AuthProvider({ children }) {
     return { ok: true, user: result.user };
   }, [persist]);
 
-  /** Office entry — no password / OTP; anyone with the link can open */
+  /** Office entry — sync, no network. Anyone with /admin can open. */
   const loginOffice = useCallback(async () => {
-    const admin = await ensureOfficeUser();
+    const admin = ensureOfficeUserSync();
     persist(admin, true);
+    syncOfficeUserToCloud(admin);
     return { ok: true, user: admin };
   }, [persist]);
 

@@ -18,9 +18,8 @@ export default function AdminLayout({ children }) {
           {children}
         </div>
         <AdminMobileNav />
-        {/* Delay prompts so dashboard paints first (avoids mobile tab crash) */}
-        <InstallHomePrompt delayMs={2500} forcePhoneOnly={false} />
-        <NotificationPermissionPrompt delayMs={4500} />
+        <InstallHomePrompt delayMs={4000} />
+        <NotificationPermissionPrompt delayMs={6500} />
       </div>
     </RequireOffice>
   );
