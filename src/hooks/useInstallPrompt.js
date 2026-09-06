@@ -44,13 +44,16 @@ export function useInstallPrompt() {
 
   const promptInstall = useCallback(async () => {
     if (!deferredPrompt) return { outcome: "unavailable" };
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === "accepted") {
-      setInstalled(true);
+    try {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      // Only clear the prompt; wait for `appinstalled` before marking installed.
       setDeferredPrompt(null);
+      return { outcome };
+    } catch {
+      setDeferredPrompt(null);
+      return { outcome: "unavailable" };
     }
-    return { outcome };
   }, [deferredPrompt]);
 
   return {

@@ -47,6 +47,11 @@ export function InstallHomePrompt({ delayMs = 600, forcePhoneOnly = true }) {
   };
 
   const onInstall = async () => {
+    // iPhone never gets a one-tap install — always show Safari Share steps.
+    if (ios) {
+      setShowSteps(true);
+      return;
+    }
     if (canNativeInstall) {
       setLoading(true);
       try {
@@ -55,9 +60,12 @@ export function InstallHomePrompt({ delayMs = 600, forcePhoneOnly = true }) {
           setOpen(false);
           return;
         }
+        // User dismissed system dialog — show manual Chrome steps as backup.
+        setShowSteps(true);
       } finally {
         setLoading(false);
       }
+      return;
     }
     setShowSteps(true);
   };

@@ -1,9 +1,10 @@
-// PWA install needs a service worker file. Do NOT intercept pages —
-// Safari shows "This page couldn't load" if fetch() on navigations fails.
+// PWA install needs a registered service worker.
+// Keep fetch as network-pass-through only — do not cache navigations
+// (Safari can show "This page couldn't load" if fetch interception fails).
 
-const VERSION = "kerago-sw-v3";
+const VERSION = "kerago-sw-v4";
 
-self.addEventListener("install", (event) => {
+self.addEventListener("install", () => {
   self.skipWaiting();
 });
 
@@ -17,4 +18,9 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// Intentionally no fetch handler — let the browser load pages normally.
+// Pass through only for non-navigation requests.
+// Never intercept document navigations — Safari can fail the whole page load.
+self.addEventListener("fetch", (event) => {
+  if (event.request.mode === "navigate") return;
+  event.respondWith(fetch(event.request));
+});
