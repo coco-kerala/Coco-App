@@ -1,7 +1,14 @@
 "use client";
 
-import { OfficeLogin } from "@/components/auth/OfficeLogin";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { LoadingState } from "@/components/ui/LoadingState";
 
-export default function AdminLoginPage() {
-  return <OfficeLogin />;
+/** Old login URL → office home */
+export default function AdminLoginRedirect() {
+  const router = useRouter();
+  useEffect(() => {
+    router.replace("/admin");
+  }, [router]);
+  return <LoadingState />;
 }
