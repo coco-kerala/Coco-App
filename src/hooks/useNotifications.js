@@ -1,70 +1,83 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  fetchCloudNotifications,
+  getLocalNotificationsForUser,
+  markCloudNotificationsRead,
+  markLocalNotificationsRead,
+  subscribeNotifLocal,
+  subscribeNotifRealtime,
+} from "@/lib/notifications/notify";
 
-const STORAGE_KEY = "kerago_notifications_v1";
 const PERM_ASKED = "kerago_notif_asked";
 
-function readStore() {
-  if (typeof window === "undefined") return [];
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-  } catch {
-    return [];
-  }
-}
-
-function writeStore(items) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items.slice(0, 50)));
-  } catch {}
-}
-
 /**
- * In-app notification list + optional browser/PWA permission.
- * True push (when app is closed) needs Firebase / OneSignal later.
+ * In-app + browser notifications for the logged-in user.
+ * Cloud realtime delivers alerts across phones when something happens.
  */
 export function useNotifications() {
+  const { user } = useAuth();
+  const userId = user?.id;
   const [items, setItems] = useState([]);
   const [permission, setPermission] = useState("default");
 
+  const reload = useCallback(async () => {
+    if (!userId) {
+      setItems([]);
+      return;
+    }
+    const local = getLocalNotificationsForUser(userId);
+    const cloud = await fetchCloudNotifications(userId);
+    const map = new Map();
+    [...cloud, ...local].forEach((n) => map.set(n.id, n));
+    const merged = [...map.values()].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+    setItems(merged);
+  }, [userId]);
+
   useEffect(() => {
-    setItems(readStore());
     if (typeof Notification !== "undefined") {
       setPermission(Notification.permission);
     }
   }, []);
 
-  const add = useCallback((notif) => {
-    const entry = {
-      id: `n_${Date.now()}`,
-      title: notif.title,
-      body: notif.body || "",
-      createdAt: new Date().toISOString(),
-      read: false,
-      href: notif.href || null,
+  useEffect(() => {
+    reload();
+    const unsubLocal = subscribeNotifLocal(() => reload());
+    const unsubRt = subscribeNotifRealtime(userId, () => reload());
+    return () => {
+      unsubLocal();
+      unsubRt();
     };
-    setItems((prev) => {
-      const next = [entry, ...prev];
-      writeStore(next);
-      return next;
-    });
+  }, [userId, reload]);
 
-    if (typeof Notification !== "undefined" && Notification.permission === "granted") {
-      try {
-        new Notification(entry.title, { body: entry.body, icon: "/icons/icon-192.png" });
-      } catch {}
-    }
-    return entry;
-  }, []);
+  const add = useCallback(
+    async (notif) => {
+      // Prefer notifyUser from mutations; this keeps UI API for manual adds
+      const { notifyUser } = await import("@/lib/notifications/notify");
+      if (!userId) return null;
+      const entry = await notifyUser({
+        userId,
+        title: notif.title,
+        body: notif.body,
+        href: notif.href,
+        type: notif.type || "update",
+      });
+      await reload();
+      return entry;
+    },
+    [userId, reload]
+  );
 
-  const markAllRead = useCallback(() => {
-    setItems((prev) => {
-      const next = prev.map((n) => ({ ...n, read: true }));
-      writeStore(next);
-      return next;
-    });
-  }, []);
+  const markAllRead = useCallback(async () => {
+    if (!userId) return;
+    markLocalNotificationsRead(userId);
+    await markCloudNotificationsRead(userId);
+    await reload();
+  }, [userId, reload]);
 
   const requestPermission = useCallback(async () => {
     if (typeof Notification === "undefined") return "unsupported";
@@ -85,5 +98,6 @@ export function useNotifications() {
     add,
     markAllRead,
     requestPermission,
+    reload,
   };
 }

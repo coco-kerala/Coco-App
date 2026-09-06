@@ -63,9 +63,12 @@ async function findOrCreateAppUser(supabase, phone, role) {
     if (!findErr && existing) return existing;
 
     if (!findErr) {
+      const { generateId } = await import("@/lib/utils");
+      const id = generateId(`usr_${role}`);
       const { data: created, error: createErr } = await supabase
         .from("app_users")
         .insert({
+          id,
           name: defaultName(role),
           phone,
           phone_display: formatPhoneDisplay(phone),
@@ -151,6 +154,23 @@ export async function requestOtpBackend({ phone, role }) {
         .update({ phone_display: formatPhoneDisplay(normalized) })
         .eq("id", data.id);
     }
+
+    // Alert office that someone needs an OTP on WhatsApp
+    try {
+      const { data: admins } = await supabase.from("app_users").select("id, role").eq("role", "admin");
+      const { notifyUser } = await import("@/lib/notifications/notify");
+      await Promise.all(
+        (admins || []).map((a) =>
+          notifyUser({
+            userId: a.id,
+            title: "New OTP request",
+            body: `${defaultName(role)} · ${formatPhoneDisplay(normalized)} — send WhatsApp code`,
+            href: "/admin/otp",
+            type: "otp",
+          })
+        )
+      );
+    } catch {}
 
     return mapSession({ ...data, phone_display: formatPhoneDisplay(normalized) });
   } catch (err) {
@@ -275,19 +295,38 @@ export async function verifyOtpBackend({ phone, role, code }) {
     const appUser = await findOrCreateAppUser(supabase, normalized, role);
     if (appUser?.id) user = mapUser(appUser);
 
-    // Always sync a local demo user so customer/worker demo data still works
-    const localUser = localFindOrCreate(normalized, role);
-    if (session.user_name && session.user_name !== defaultName(role)) {
-      try {
-        const { updateUserProfile } = await import("@/lib/data/store");
-        updateUserProfile(localUser.id, { name: session.user_name });
-      } catch {}
+    // Keep local cache in sync with the same id as Supabase
+    try {
+      const { getAppData, replaceAppData, findOrCreateUserByPhone, updateUserProfile } = await import(
+        "@/lib/data/store"
+      );
+      if (user?.id) {
+        const data = getAppData();
+        const idx = data.users.findIndex((u) => u.id === user.id || (u.phone && u.role === role));
+        if (idx >= 0) {
+          data.users[idx] = { ...data.users[idx], ...user };
+        } else {
+          data.users.push(user);
+        }
+        replaceAppData(data);
+      } else {
+        const localUser = findOrCreateUserByPhone(normalized, role);
+        if (session.user_name && session.user_name !== defaultName(role)) {
+          updateUserProfile(localUser.id, { name: session.user_name });
+        }
+        user = {
+          ...localUser,
+          name: session.user_name || localUser.name,
+        };
+      }
+    } catch {
+      user = user || {
+        id: appUser?.id || `tmp_${normalized}`,
+        name: session.user_name || defaultName(role),
+        phone: formatPhoneDisplay(normalized),
+        role,
+      };
     }
-
-    user = user || {
-      ...localUser,
-      name: session.user_name || localUser.name,
-    };
 
     return { ok: true, user, session: mapSession(session) };
   } catch (err) {

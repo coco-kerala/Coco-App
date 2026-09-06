@@ -3,27 +3,15 @@
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAppData } from "@/hooks/useAppData";
-import { resetAppData } from "@/lib/data/store";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { PageTransition } from "@/components/PageTransition";
-import { useState } from "react";
 import { LogOut } from "lucide-react";
 
 export default function AdminSettingsPage() {
   const { refresh } = useAppData();
   const { logout } = useAuth();
   const router = useRouter();
-  const [showReset, setShowReset] = useState(false);
-  const [resetDone, setResetDone] = useState(false);
-
-  const handleReset = () => {
-    resetAppData();
-    refresh();
-    setResetDone(true);
-    setTimeout(() => setResetDone(false), 3000);
-  };
 
   return (
     <PageTransition>
@@ -33,8 +21,8 @@ export default function AdminSettingsPage() {
         <Card className="mt-5">
           <h2 className="font-bold text-coco-ink">WhatsApp OTP login</h2>
           <p className="text-sm text-coco-muted mt-1">
-            Users enter their number on the customer / worker / admin login links. OTPs appear under{" "}
-            <strong>OTPs</strong> — send them on WhatsApp, then the user verifies in the app.
+            People enter their number on User / Partner / Office login. Codes show under{" "}
+            <strong>OTPs</strong> — send them on WhatsApp.
           </p>
           <Button className="mt-4" variant="soft" onClick={() => router.push("/admin/otp")}>
             Open OTP inbox
@@ -42,10 +30,15 @@ export default function AdminSettingsPage() {
         </Card>
 
         <Card className="mt-4">
-          <h2 className="font-bold text-coco-ink">Demo Data</h2>
-          <p className="text-sm text-coco-muted mt-1">Reset all data back to the initial demo state.</p>
-          <Button variant="danger" className="mt-4" onClick={() => setShowReset(true)}>Reset All Data</Button>
-          {resetDone && <p className="mt-3 text-sm text-coco-green font-semibold">Data reset successfully!</p>}
+          <h2 className="font-bold text-coco-ink">Live data</h2>
+          <p className="text-sm text-coco-muted mt-1">
+            Bookings, partners, bank details, chat and alerts are saved to Supabase when connected.
+            Run <code className="text-xs bg-coco-cream px-1 rounded">supabase/migrate_live_data.sql</code> once
+            in the Supabase SQL Editor if you have not already.
+          </p>
+          <Button variant="outline" className="mt-4" onClick={() => refresh()}>
+            Refresh data
+          </Button>
         </Card>
 
         <Card className="mt-4">
@@ -54,8 +47,6 @@ export default function AdminSettingsPage() {
             <LogOut size={16} /> Log out
           </Button>
         </Card>
-
-        <ConfirmDialog open={showReset} onClose={() => setShowReset(false)} onConfirm={handleReset} title="Reset Data?" message="All service requests, jobs, OTPs, and changes will be lost. Sample data will be restored." confirmLabel="Reset" />
       </div>
     </PageTransition>
   );

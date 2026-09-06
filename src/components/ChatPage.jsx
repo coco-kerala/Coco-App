@@ -1,35 +1,115 @@
 "use client";
 
 import { MessageCircle, Send } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useT } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { PageTransition } from "@/components/PageTransition";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { generateId } from "@/lib/utils";
+import { getSupabaseClient } from "@/lib/supabase/client";
+import { isLiveMode } from "@/lib/data/cloudSync";
+import { notifyAdmins } from "@/lib/notifications/notify";
+import { getAppData } from "@/lib/data/store";
+
+function threadFor(role, userId) {
+  return `${role}:${userId}`;
+}
 
 /**
- * Simple chat inbox (demo). Real office chat / WhatsApp bridge can plug in later.
+ * Chat with office — saved to Supabase when live.
  */
 export function ChatPage({ role = "customer" }) {
   const { t } = useT();
+  const { user } = useAuth();
   const [text, setText] = useState("");
-  const [messages, setMessages] = useState([
-    {
-      id: "1",
-      from: "office",
-      body: t("chat.welcome"),
-      at: new Date().toISOString(),
-    },
-  ]);
+  const [messages, setMessages] = useState([]);
 
-  const send = () => {
+  const threadId = user ? threadFor(role, user.id) : "guest";
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+
+    (async () => {
+      const welcome = {
+        id: "welcome",
+        from: "office",
+        body: t("chat.welcome"),
+        at: new Date().toISOString(),
+      };
+
+      if (!isLiveMode()) {
+        if (!cancelled) setMessages([welcome]);
+        return;
+      }
+
+      const sb = getSupabaseClient();
+      if (!sb) {
+        if (!cancelled) setMessages([welcome]);
+        return;
+      }
+
+      const { data } = await sb
+        .from("chat_messages")
+        .select("*")
+        .eq("thread_id", threadId)
+        .order("created_at", { ascending: true })
+        .limit(100);
+
+      const mapped = (data || []).map((m) => ({
+        id: m.id,
+        from: m.from_user_id === user.id ? "me" : "office",
+        body: m.body,
+        at: m.created_at,
+      }));
+
+      if (!cancelled) setMessages(mapped.length ? mapped : [welcome]);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user, threadId, t]);
+
+  const send = async () => {
     const body = text.trim();
-    if (!body) return;
-    setMessages((prev) => [
-      ...prev,
-      { id: `m_${Date.now()}`, from: "me", body, at: new Date().toISOString() },
-    ]);
+    if (!body || !user) return;
+
+    const id = generateId("chat");
+    const at = new Date().toISOString();
+    setMessages((prev) => [...prev, { id, from: "me", body, at }]);
     setText("");
+
+    if (isLiveMode()) {
+      const sb = getSupabaseClient();
+      if (sb) {
+        await sb.from("chat_messages").insert({
+          id,
+          thread_id: threadId,
+          from_user_id: user.id,
+          from_role: user.role,
+          body,
+          created_at: at,
+        });
+      }
+    }
+
+    await notifyAdmins(
+      {
+        title: "New chat message",
+        body: body.slice(0, 80),
+        href: "/admin",
+        type: "chat",
+      },
+      getAppData().users
+    );
+
+    // If office replies later they'd notify the user; for now echo tip only
+    if (role === "admin") {
+      // admin chatting in own app — rare
+    }
   };
 
   return (

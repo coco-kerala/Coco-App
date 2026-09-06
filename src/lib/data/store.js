@@ -14,9 +14,29 @@ import { generateId } from "../utils";
 import { calculateServicePrice } from "../pricing";
 import { normalizePhone, generateOtpCode } from "@/lib/auth/otp";
 
+import { isLiveMode, scheduleCloudPush } from "@/lib/data/cloudSync";
+import { notifyUser, notifyAdmins } from "@/lib/notifications/notify";
+
 const STORAGE_KEY = "coco_demo_data_v2";
 
+function getEmptyData() {
+  return {
+    users: [],
+    properties: [],
+    requests: [],
+    jobs: [],
+    photos: [],
+    payments: [],
+    reviews: [],
+    workerLocations: {},
+    otpSessions: [],
+  };
+}
+
 function getDefaultData() {
+  // Live (Supabase): start empty — real OTP users + bookings are collected in the cloud.
+  // Demo/local only: seed sample data for offline tryouts.
+  if (isLiveMode()) return getEmptyData();
   return {
     users: structuredClone(SAMPLE_USERS),
     properties: structuredClone(SAMPLE_PROPERTIES),
@@ -31,16 +51,24 @@ function getDefaultData() {
 }
 
 function normalize(data) {
-  const defaults = getDefaultData();
-  const userIds = new Set(data.users.map((u) => u.id));
-  for (const u of defaults.users) {
-    if (!userIds.has(u.id)) data.users.push(structuredClone(u));
-  }
-  if (!data.jobs?.length) data.jobs = structuredClone(defaults.jobs);
-  if (!data.requests?.length) data.requests = structuredClone(defaults.requests);
-  if (!data.properties?.length) data.properties = structuredClone(defaults.properties);
-  if (!data.workerLocations) data.workerLocations = structuredClone(defaults.workerLocations);
+  if (!data.users) data.users = [];
+  if (!data.jobs) data.jobs = [];
+  if (!data.requests) data.requests = [];
+  if (!data.properties) data.properties = [];
+  if (!data.photos) data.photos = [];
+  if (!data.payments) data.payments = [];
+  if (!data.reviews) data.reviews = [];
+  if (!data.workerLocations) data.workerLocations = {};
   if (!Array.isArray(data.otpSessions)) data.otpSessions = [];
+
+  // Only re-seed sample users when not in live mode
+  if (!isLiveMode()) {
+    const defaults = getDefaultData();
+    const userIds = new Set(data.users.map((u) => u.id));
+    for (const u of defaults.users) {
+      if (!userIds.has(u.id)) data.users.push(structuredClone(u));
+    }
+  }
   return data;
 }
 
@@ -53,7 +81,8 @@ function loadData() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(fresh));
       return fresh;
     }
-    return normalize(JSON.parse(raw));
+    const parsed = JSON.parse(raw);
+    return normalize(parsed);
   } catch {
     const fresh = getDefaultData();
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(fresh)); } catch {}
@@ -65,11 +94,23 @@ function saveData(data) {
   if (typeof window === "undefined") return;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   window.dispatchEvent(new CustomEvent("coco-data-change"));
+  scheduleCloudPush(data);
 }
 
 export function ensureDemoData() {
   if (typeof window === "undefined") return getDefaultData();
   return loadData();
+}
+
+/** Replace local cache with cloud data (call once on app boot in live mode). */
+export function replaceAppData(data) {
+  const next = normalize({
+    ...getEmptyData(),
+    ...data,
+    otpSessions: loadData().otpSessions || [],
+  });
+  saveData(next);
+  return next;
 }
 
 export function getAppData() {
@@ -94,7 +135,10 @@ export function subscribeToData(callback) {
 }
 
 export function getUserById(id) {
-  return loadData().users.find((u) => u.id === id) || SAMPLE_USERS.find((u) => u.id === id);
+  const found = loadData().users.find((u) => u.id === id);
+  if (found) return found;
+  if (!isLiveMode()) return SAMPLE_USERS.find((u) => u.id === id);
+  return undefined;
 }
 
 export function updateUserProfile(userId, updates) {
@@ -236,6 +280,24 @@ export function createServiceRequest(input) {
     created_at: now,
   });
   saveData(data);
+
+  notifyAdmins(
+    {
+      title: "New booking",
+      body: "Someone booked coconut care. Open Office to assign a partner.",
+      href: "/admin/requests",
+      type: "request",
+    },
+    data.users
+  );
+  notifyUser({
+    userId: request.customer_id,
+    title: "Booking received",
+    body: "We got your request. Office will assign a partner soon.",
+    href: `/user/requests/${request.id}`,
+    type: "request",
+  });
+
   return enrichRequest(request, data);
 }
 
@@ -265,6 +327,22 @@ export function assignWorker(requestId, workerId) {
   }
 
   saveData(data);
+
+  notifyUser({
+    userId: workerId,
+    title: "New job for you",
+    body: "Office assigned you a coconut care job. Open it now.",
+    href: "/partner",
+    type: "job",
+  });
+  notifyUser({
+    userId: request.customer_id,
+    title: "Partner assigned",
+    body: "A partner is coming for your booking.",
+    href: `/user/requests/${requestId}`,
+    type: "job",
+  });
+
   return enrichRequest(request, data);
 }
 
@@ -308,6 +386,35 @@ export function updateJobStatus(jobId, status, extras = {}) {
   }
 
   saveData(data);
+
+  const statusLabel = {
+    on_the_way: "Partner is on the way",
+    arrived: "Partner has arrived",
+    in_progress: "Work started",
+    completed: "Work finished — please pay",
+    assigned: "Job assigned",
+  };
+  if (statusLabel[status]) {
+    notifyUser({
+      userId: request.customer_id,
+      title: statusLabel[status],
+      body: status === "completed"
+        ? "Open the booking to see GPay / bank and pay."
+        : "Open your booking for details.",
+      href: `/user/requests/${request.id}`,
+      type: "status",
+    });
+    notifyAdmins(
+      {
+        title: `Job update: ${status.replace(/_/g, " ")}`,
+        body: `Request ${request.id}`,
+        href: "/admin/jobs",
+        type: "status",
+      },
+      data.users
+    );
+  }
+
   return getJobById(jobId);
 }
 
@@ -339,6 +446,26 @@ export function confirmAndRate(input) {
   });
 
   saveData(data);
+
+  if (request.assigned_worker_id) {
+    notifyUser({
+      userId: request.assigned_worker_id,
+      title: "Payment confirmed",
+      body: `Customer rated ${input.rating}★. Good work!`,
+      href: "/partner",
+      type: "payment",
+    });
+  }
+  notifyAdmins(
+    {
+      title: "Booking confirmed & paid",
+      body: `Rating ${input.rating}★`,
+      href: "/admin/payments",
+      type: "payment",
+    },
+    data.users
+  );
+
   return enrichRequest(request, data);
 }
 
@@ -349,6 +476,21 @@ export function cancelRequest(requestId) {
   request.status = "cancelled";
   request.updated_at = new Date().toISOString();
   saveData(data);
+
+  notifyAdmins(
+    { title: "Booking cancelled", body: requestId, href: "/admin/requests", type: "request" },
+    data.users
+  );
+  if (request.assigned_worker_id) {
+    notifyUser({
+      userId: request.assigned_worker_id,
+      title: "Job cancelled",
+      body: "A booking assigned to you was cancelled.",
+      href: "/partner",
+      type: "job",
+    });
+  }
+
   return enrichRequest(request, data);
 }
 
