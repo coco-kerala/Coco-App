@@ -1,34 +1,34 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { LoadingState } from "@/components/ui/LoadingState";
-import { loginPathForRole, pathForRole } from "@/lib/auth/roles";
+import { loginPathForRole } from "@/lib/auth/roles";
 
 /**
- * Protects role apps. Redirects to /{path}/login when not authenticated.
- * Internal roles stay customer/worker/admin; URLs are /user /partner /admin.
+ * Protects /user and /partner.
+ * Uses that role's own saved session — visiting /admin must not steal this login.
  */
 export function RequireAuth({ role, children }) {
-  const { user, loading, isAuthenticated } = useAuth();
+  const { loading, switchToRole, getSessionForRole } = useAuth();
   const router = useRouter();
+  const [ready, setReady] = useState(false);
+  const [ok, setOk] = useState(false);
 
   useEffect(() => {
     if (loading) return;
-    if (!isAuthenticated || !user) {
+    const sessionUser = switchToRole(role) || getSessionForRole(role);
+    if (!sessionUser || sessionUser.role !== role) {
+      setOk(false);
+      setReady(true);
       router.replace(loginPathForRole(role));
       return;
     }
-    if (user.role !== role) {
-      router.replace(pathForRole(user.role));
-    }
-  }, [loading, isAuthenticated, user, role, router]);
+    setOk(true);
+    setReady(true);
+  }, [loading, role, router, switchToRole, getSessionForRole]);
 
-  if (loading) return <LoadingState />;
-  if (!isAuthenticated || !user || user.role !== role) {
-    return <LoadingState />;
-  }
-
+  if (loading || !ready || !ok) return <LoadingState />;
   return children;
 }
