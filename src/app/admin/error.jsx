@@ -3,7 +3,7 @@
 export default function AdminError({ error, reset }) {
   return (
     <div className="min-h-dvh flex flex-col items-center justify-center px-6 text-center bg-coco-cream">
-      <p className="text-xl font-extrabold text-coco-ink">Office hit a problem</p>
+      <p className="text-xl font-extrabold text-coco-ink">Page hit a problem</p>
       <p className="mt-2 text-sm text-coco-muted max-w-sm">
         {error?.message || "Something went wrong loading this page."}
       </p>

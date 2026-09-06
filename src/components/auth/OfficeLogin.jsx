@@ -21,7 +21,7 @@ export function OfficeLogin() {
     try {
       const res = await loginOffice();
       if (!res.ok) {
-        setError(res.error || "Could not open office");
+        setError(res.error || "Could not open");
         return;
       }
       router.replace("/admin");
@@ -39,13 +39,13 @@ export function OfficeLogin() {
             <Shield size={24} />
           </div>
         </div>
-        <h1 className="mt-4 text-2xl font-extrabold text-coco-ink">Office</h1>
+        <h1 className="mt-4 text-2xl font-extrabold text-coco-ink">Team</h1>
         <p className="mt-2 text-base text-coco-muted leading-relaxed">
-          Open the office dashboard. Send OTPs for users and partners, assign jobs, and manage bookings.
+          Send OTPs, assign partners, and manage bookings.
         </p>
         {error && <p className="mt-3 text-sm text-coco-danger font-medium">{error}</p>}
         <Button fullWidth size="lg" loading={loading} className="mt-6 h-14 text-base" onClick={enter}>
-          Enter office
+          Continue
         </Button>
       </Card>
     </main>

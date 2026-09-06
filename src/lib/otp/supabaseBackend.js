@@ -13,7 +13,7 @@ import {
 const OTP_TTL_MS = 10 * 60 * 1000;
 
 function defaultName(role) {
-  if (role === "admin") return "Office";
+  if (role === "admin") return "KeraGo";
   if (role === "worker") return "Partner";
   return "Home";
 }

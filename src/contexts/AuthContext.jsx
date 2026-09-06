@@ -79,7 +79,7 @@ function ensureOfficeUserSync() {
 
   const admin = {
     id: generateId(),
-    name: "Office",
+    name: "KeraGo",
     phone: "office",
     email: "office@kerago.in",
     role: "admin",
@@ -107,7 +107,7 @@ function syncOfficeUserToCloud(admin) {
         id: admin.id,
         name: admin.name,
         phone: "office",
-        phone_display: "Office",
+        phone_display: "KeraGo",
         email: admin.email,
         role: "admin",
       },
@@ -195,7 +195,7 @@ export function AuthProvider({ children }) {
 
   const requestOtp = useCallback(async (phone, role) => {
     if (role === "admin") {
-      throw new Error("Office does not use WhatsApp OTP");
+      throw new Error("Team login does not use WhatsApp OTP");
     }
     const session = await requestOtpBackend({ phone, role });
     return {
@@ -209,7 +209,7 @@ export function AuthProvider({ children }) {
 
   const verifyOtp = useCallback(async (phone, role, code) => {
     if (role === "admin") {
-      return { ok: false, error: "Office does not use WhatsApp OTP" };
+      return { ok: false, error: "Team login does not use WhatsApp OTP" };
     }
     const result = await verifyOtpBackend({ phone, role, code });
     if (!result.ok) return result;

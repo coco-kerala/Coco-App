@@ -22,7 +22,7 @@ export function generateOtpCode() {
 
 export function buildWhatsAppOtpMessage({ name, otp, role }) {
   const app =
-    role === "worker" ? "KeraGo Partner" : role === "admin" ? "KeraGo Office" : "KeraGo";
+    role === "worker" ? "KeraGo Partner" : "KeraGo";
   const who = name ? `Hi ${name},` : "Hi,";
   return `${who} your ${app} login code is *${otp}*. Valid for 10 minutes. Do not share this code.`;
 }

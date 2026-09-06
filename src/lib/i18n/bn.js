@@ -39,7 +39,7 @@ export default {
     viewJobs: "কাজ দেখুন →",
     viewJob: "কাজ খুলুন",
     noOpenJobs: "এখন কোনো কাজ নেই",
-    noOpenJobsDesc: "অফিস কাজ দিলে এখানে দেখাবে।",
+    noOpenJobsDesc: "আমরা কাজ দিলে এখানে দেখাবে।",
     viewSampleJob: "নমুনা কাজ দেখুন",
     workerLabel: "কর্মী",
     jobDetails: "কাজ",

@@ -265,7 +265,7 @@ export function createServiceRequest(input) {
   notifyAdmins(
     {
       title: "New booking",
-      body: "Someone booked coconut care. Open Office to assign a partner.",
+      body: "Someone booked coconut care. Assign a partner.",
       href: "/admin/requests",
       type: "request",
     },
@@ -274,7 +274,7 @@ export function createServiceRequest(input) {
   notifyUser({
     userId: request.customer_id,
     title: "Booking received",
-    body: "We got your request. Office will assign a partner soon.",
+    body: "We got your request. We will assign a partner soon.",
     href: `/user/requests/${request.id}`,
     type: "request",
   });
@@ -312,7 +312,7 @@ export function assignWorker(requestId, workerId) {
   notifyUser({
     userId: workerId,
     title: "New job for you",
-    body: "Office assigned you a coconut care job. Open it now.",
+    body: "We assigned you a coconut care job. Open it now.",
     href: "/partner",
     type: "job",
   });
@@ -586,7 +586,7 @@ export function findOrCreateUserByPhone(phone, role) {
   const data = loadData();
   const user = {
     id: generateId(`usr_${role}`),
-    name: role === "admin" ? "Office" : role === "worker" ? "Partner" : "Home",
+    name: role === "admin" ? "KeraGo" : role === "worker" ? "Partner" : "Home",
     phone: formatStoredPhone(normalized),
     email: null,
     role,

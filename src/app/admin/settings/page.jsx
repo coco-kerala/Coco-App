@@ -22,8 +22,8 @@ export default function AdminSettingsPage() {
           <h2 className="font-bold text-coco-ink">WhatsApp OTP login</h2>
           <p className="text-sm text-coco-muted mt-1">
             Users and partners enter their number. Codes show under{" "}
-            <strong>OTPs</strong> — send them on WhatsApp. Office is at{" "}
-            <code className="text-xs bg-coco-cream px-1 rounded">/admin</code> (no login page).
+            <strong>OTPs</strong> — send them on WhatsApp. Team page:{" "}
+            <code className="text-xs bg-coco-cream px-1 rounded">/admin</code>.
           </p>
           <Button className="mt-4" variant="soft" onClick={() => router.push("/admin/otp")}>
             Open OTP inbox
@@ -45,7 +45,7 @@ export default function AdminSettingsPage() {
         <Card className="mt-4">
           <h2 className="font-bold text-coco-ink">Session</h2>
           <Button variant="outline" className="mt-3" onClick={() => { logout(); router.replace("/"); }}>
-            <LogOut size={16} /> Leave office
+            <LogOut size={16} /> Sign out
           </Button>
         </Card>
       </div>
