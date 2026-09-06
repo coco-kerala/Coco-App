@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Bell } from "lucide-react";
 import { useT } from "@/contexts/LanguageContext";
+import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 import { useNotifications } from "@/hooks/useNotifications";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
@@ -10,16 +11,19 @@ import { Button } from "@/components/ui/Button";
 const SESSION_KEY = "kerago_notif_session_dismiss";
 
 /**
- * Ask to allow alerts.
- * Keeps showing on each visit until permission is granted.
- * "Later" only hides for this browser session.
+ * Ask for alerts only after the app is installed (home screen / standalone).
  */
-export function NotificationPermissionPrompt({ delayMs = 1400 }) {
+export function NotificationPermissionPrompt({ delayMs = 900 }) {
   const { t } = useT();
+  const { installed } = useInstallPrompt();
   const { permission, requestPermission } = useNotifications();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
+    if (!installed) {
+      setOpen(false);
+      return;
+    }
     if (typeof Notification === "undefined") return;
     if (permission === "granted") return;
     try {
@@ -27,9 +31,9 @@ export function NotificationPermissionPrompt({ delayMs = 1400 }) {
     } catch {}
     const timer = setTimeout(() => setOpen(true), delayMs);
     return () => clearTimeout(timer);
-  }, [permission, delayMs]);
+  }, [installed, permission, delayMs]);
 
-  if (!open || permission === "granted") return null;
+  if (!installed || !open || permission === "granted") return null;
 
   const softClose = () => {
     try {
@@ -45,13 +49,9 @@ export function NotificationPermissionPrompt({ delayMs = 1400 }) {
           <Bell size={28} />
         </div>
         <p className="text-sm text-coco-muted leading-relaxed">{t("notif.promptBody")}</p>
-        {permission === "denied" ? (
+        {permission === "denied" && (
           <p className="mt-3 text-xs font-semibold text-coco-shell leading-relaxed">
             {t("notif.deniedHint") || "Alerts are blocked. Open phone Settings → site → allow notifications, then refresh."}
-          </p>
-        ) : (
-          <p className="mt-2 text-xs font-semibold text-coco-shell">
-            {t("notif.keepShowing") || "We will ask again until you allow alerts."}
           </p>
         )}
       </div>

@@ -188,7 +188,6 @@ export default {
     installNow: "Install now",
     addToHome: "Show me how",
     iosHint: "On iPhone, follow these simple steps:",
-    keepShowing: "We will ask again until you add KeraGo to your home screen.",
   },
   chat: {
     title: "Chat",
@@ -224,7 +223,6 @@ export default {
     allow: "Allow alerts",
     later: "Not now",
     enableHint: "Turn on phone alerts for job updates.",
-    keepShowing: "We will ask again until you allow alerts.",
     deniedHint: "Alerts are blocked. Open phone Settings → this site → allow notifications, then refresh.",
   },
   payment: {

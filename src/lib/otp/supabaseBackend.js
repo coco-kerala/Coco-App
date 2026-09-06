@@ -124,6 +124,7 @@ export async function requestOtpBackend({ phone, role }) {
 
     const payload = {
       phone: normalized,
+      phone_display: formatPhoneDisplay(normalized),
       role,
       user_id: user.id || null,
       user_name: user.name,
@@ -132,7 +133,6 @@ export async function requestOtpBackend({ phone, role }) {
       expires_at: expiresAt,
     };
 
-    // phone_display is optional (added by fix_otp_rls.sql)
     const { data, error } = await supabase
       .from("otp_sessions")
       .insert(payload)
@@ -140,19 +140,21 @@ export async function requestOtpBackend({ phone, role }) {
       .single();
 
     if (error) {
-      // Retry with phone_display if column exists path failed for other reason — or without
+      // Older DBs without phone_display — retry without it
       if (String(error.message || "").includes("phone_display")) {
-        // already not including it
+        const { phone_display: _pd, ...withoutDisplay } = payload;
+        const retry = await supabase
+          .from("otp_sessions")
+          .insert(withoutDisplay)
+          .select("*")
+          .single();
+        if (retry.error) throw retry.error;
+        return mapSession({
+          ...retry.data,
+          phone_display: formatPhoneDisplay(normalized),
+        });
       }
       throw error;
-    }
-
-    // Best-effort add phone_display
-    if (data?.id) {
-      await supabase
-        .from("otp_sessions")
-        .update({ phone_display: formatPhoneDisplay(normalized) })
-        .eq("id", data.id);
     }
 
     // Alert office that someone needs an OTP on WhatsApp
@@ -179,8 +181,9 @@ export async function requestOtpBackend({ phone, role }) {
         "Supabase blocked OTP save (RLS). Run supabase/fix_otp_rls.sql in the SQL Editor, then try again."
       );
     }
-    console.warn("[OTP] Supabase failed, using local fallback:", err?.message || err);
-    return localCreate({ phone: normalized, role });
+    // Live mode: never hide OTP on this phone only — office must see it in Supabase.
+    console.error("[OTP] Supabase save failed:", err?.message || err);
+    throw new Error(err?.message || "Could not save OTP to Supabase. Try again.");
   }
 }
 

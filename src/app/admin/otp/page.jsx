@@ -43,7 +43,7 @@ export default function AdminOtpPage() {
 
   useEffect(() => {
     refresh();
-    const id = setInterval(refresh, 8000);
+    const id = setInterval(refresh, 4000);
     return () => clearInterval(id);
   }, [refresh]);
 

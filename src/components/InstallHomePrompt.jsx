@@ -16,11 +16,7 @@ function isPhone() {
     || (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.userAgent));
 }
 
-/**
- * Ask to add KeraGo to the home screen.
- * Keeps showing on each visit until the app is actually installed.
- * "Later" only hides for this browser session.
- */
+/** Ask to add KeraGo to the home screen first. */
 export function InstallHomePrompt({ delayMs = 600, forcePhoneOnly = true }) {
   const { t } = useT();
   const { canNativeInstall, ios, installed, promptInstall } = useInstallPrompt();
@@ -47,7 +43,6 @@ export function InstallHomePrompt({ delayMs = 600, forcePhoneOnly = true }) {
   };
 
   const onInstall = async () => {
-    // iPhone never gets a one-tap install — always show Safari Share steps.
     if (ios) {
       setShowSteps(true);
       return;
@@ -60,7 +55,6 @@ export function InstallHomePrompt({ delayMs = 600, forcePhoneOnly = true }) {
           setOpen(false);
           return;
         }
-        // User dismissed system dialog — show manual Chrome steps as backup.
         setShowSteps(true);
       } finally {
         setLoading(false);
@@ -77,9 +71,6 @@ export function InstallHomePrompt({ delayMs = 600, forcePhoneOnly = true }) {
       <div className="flex flex-col items-center text-center">
         <Logo size="lg" className="mb-3" />
         <p className="text-sm text-coco-muted leading-relaxed">{t("install.subtitle")}</p>
-        <p className="mt-2 text-xs font-semibold text-coco-shell">
-          {t("install.keepShowing") || "We will ask again until you add KeraGo to your home screen."}
-        </p>
       </div>
 
       {showSteps ? (

@@ -18,8 +18,8 @@ export default function AdminLayout({ children }) {
           {children}
         </div>
         <AdminMobileNav />
-        <InstallHomePrompt delayMs={4000} />
-        <NotificationPermissionPrompt delayMs={6500} />
+        <InstallHomePrompt delayMs={800} />
+        <NotificationPermissionPrompt delayMs={1200} />
       </div>
     </RequireOffice>
   );
