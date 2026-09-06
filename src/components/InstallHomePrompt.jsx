@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Smartphone, Share } from "lucide-react";
 import { useT } from "@/contexts/LanguageContext";
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
+import { setPwaRole } from "@/components/PwaStartRedirect";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Logo } from "@/components/brand/Logo";
@@ -16,13 +17,17 @@ function isPhone() {
     || (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.userAgent));
 }
 
-/** Ask to add KeraGo to the home screen first. */
-export function InstallHomePrompt({ delayMs = 600, forcePhoneOnly = true }) {
+/** Ask to add this role's app to the home screen. */
+export function InstallHomePrompt({ delayMs = 600, forcePhoneOnly = true, role = "user" }) {
   const { t } = useT();
   const { canNativeInstall, ios, installed, promptInstall } = useInstallPrompt();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showSteps, setShowSteps] = useState(false);
+
+  useEffect(() => {
+    setPwaRole(role);
+  }, [role]);
 
   useEffect(() => {
     if (installed) return;
@@ -43,6 +48,7 @@ export function InstallHomePrompt({ delayMs = 600, forcePhoneOnly = true }) {
   };
 
   const onInstall = async () => {
+    setPwaRole(role);
     if (ios) {
       setShowSteps(true);
       return;

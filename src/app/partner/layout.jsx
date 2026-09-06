@@ -8,6 +8,7 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { RequireAuth } from "@/components/RequireAuth";
 import { Logo } from "@/components/brand/Logo";
 import { NotifBell } from "@/components/NotifBell";
+import { RoleManifest } from "@/components/RoleManifest";
 import { InstallHomePrompt } from "@/components/InstallHomePrompt";
 import { NotificationPermissionPrompt } from "@/components/NotificationPermissionPrompt";
 import { cn } from "@/lib/utils";
@@ -16,11 +17,13 @@ import { Briefcase, MessageCircle, Headphones, User } from "lucide-react";
 function LoginShell({ children }) {
   return (
     <div className="relative min-h-dvh">
+      <RoleManifest role="partner" />
       <div className="absolute top-0 right-0 z-50 p-4 pt-[max(1rem,env(safe-area-inset-top))]">
         <LanguageSwitcher />
       </div>
       {children}
       <LanguagePicker />
+      <InstallHomePrompt role="partner" />
     </div>
   );
 }
@@ -38,6 +41,7 @@ function PartnerShell({ children }) {
 
   return (
     <div className="min-h-dvh bg-coco-cream">
+      <RoleManifest role="partner" />
       <div className="mobile-shell pt-2 pb-28">
         <header className="flex items-center justify-between px-5 pt-3">
           <Logo size="sm" />
@@ -75,7 +79,7 @@ function PartnerShell({ children }) {
           </div>
         </div>
       </nav>
-      <InstallHomePrompt />
+      <InstallHomePrompt role="partner" />
       <NotificationPermissionPrompt />
       <LanguagePicker />
     </div>

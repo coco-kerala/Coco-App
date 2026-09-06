@@ -1,6 +1,7 @@
 import { Plus_Jakarta_Sans, Fredoka } from "next/font/google";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
+import { PwaStartRedirect } from "@/components/PwaStartRedirect";
 import "./globals.css";
 
 const jakarta = Plus_Jakarta_Sans({
@@ -20,7 +21,7 @@ export const metadata = {
   title: "KeraGo — Coconut care",
   description: "Book trained partners for coconut plucking. Simple for homes and farms.",
   applicationName: "KeraGo",
-  manifest: "/manifest.json",
+  manifest: "/manifest-user.json",
   appleWebApp: { capable: true, statusBarStyle: "default", title: "KeraGo" },
   icons: { icon: "/icons/icon-192.png", apple: "/icons/icon-192.png" },
 };
@@ -37,6 +38,7 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className={`${jakarta.variable} ${brand.variable} font-sans antialiased`}>
         <AuthProvider>
+          <PwaStartRedirect />
           {children}
           <ServiceWorkerRegister />
         </AuthProvider>
