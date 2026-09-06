@@ -12,8 +12,8 @@ const apps = [
     role: "customer",
     title: "Book care",
     blurb: "For your home or farm — book coconut plucking",
-    href: "/customer",
-    loginHref: "/customer/login",
+    href: "/user",
+    loginHref: "/user/login",
     emoji: "🏠",
     color: "bg-coco-green text-white",
   },
@@ -21,8 +21,8 @@ const apps = [
     role: "worker",
     title: "Partner",
     blurb: "See jobs · go there · finish · get paid",
-    href: "/worker",
-    loginHref: "/worker/login",
+    href: "/partner",
+    loginHref: "/partner/login",
     emoji: "🌴",
     color: "bg-coco-ink text-white",
   },
@@ -57,9 +57,12 @@ export default function LandingPage() {
           <CoconutTreeIllustration className="w-28 h-28 mt-8 -ml-2" />
         </motion.div>
 
-        <h1 className="mt-2 text-4xl font-extrabold tracking-tight text-coco-ink">COCO</h1>
+        <h1 className="mt-2 text-4xl font-brand font-bold tracking-tight leading-[1.15]">
+          <span className="text-coco-shell">Kera</span>
+          <span className="text-coco-leaf">Go</span>
+        </h1>
         <p className="mt-2 text-lg text-coco-muted leading-relaxed">
-          Coconut care — simple like a booking app.
+          Coconut care made simple.
         </p>
 
         <p className="mt-8 text-xs font-bold uppercase tracking-wide text-coco-muted">Try demo (one tap)</p>

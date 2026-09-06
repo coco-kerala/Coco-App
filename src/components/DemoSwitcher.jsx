@@ -6,8 +6,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
 const ROLES = [
-  { role: "customer", label: "Book", href: "/customer" },
-  { role: "worker", label: "Partner", href: "/worker" },
+  { role: "customer", label: "Book", href: "/user" },
+  { role: "worker", label: "Partner", href: "/partner" },
   { role: "admin", label: "Office", href: "/admin" },
 ];
 
@@ -21,9 +21,9 @@ export function DemoSwitcher() {
 
   const activeRole = pathname.startsWith("/admin")
     ? "admin"
-    : pathname.startsWith("/worker")
+    : pathname.startsWith("/partner")
       ? "worker"
-      : pathname.startsWith("/customer")
+      : pathname.startsWith("/user")
         ? "customer"
         : null;
 
@@ -33,8 +33,8 @@ export function DemoSwitcher() {
     <div className="fixed top-0 left-0 right-0 z-[60] pointer-events-none">
       <div className="mx-auto max-w-lg lg:max-w-none px-3 pt-[max(0.5rem,env(safe-area-inset-top))] pointer-events-auto">
         <div className="glass-nav rounded-2xl border border-coco-border/80 shadow-[var(--shadow-soft)] px-2 py-1.5 flex items-center gap-1">
-          <Link href="/" className="shrink-0 px-2.5 py-1.5 text-[11px] font-bold text-coco-green tracking-wide no-underline">
-            COCO
+          <Link href="/" className="shrink-0 px-2.5 py-1.5 text-[11px] font-brand font-bold tracking-wide no-underline">
+            <span className="text-coco-shell">Kera</span><span className="text-coco-leaf">Go</span>
           </Link>
           <div className="h-4 w-px bg-coco-border" />
           <div className="flex flex-1 gap-0.5 min-w-0">

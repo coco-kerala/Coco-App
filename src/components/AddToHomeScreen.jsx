@@ -7,14 +7,20 @@ import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 
-/** One-click install on Android (Chrome). iOS requires manual Share → Add to Home Screen — Apple has no API for this. */
+function isPhone() {
+  if (typeof navigator === "undefined") return false;
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+}
+
+/** One-click install on Android (Chrome). iOS / others get step-by-step help. */
 export function InstallAppButton() {
   const { t } = useT();
   const { canNativeInstall, ios, installed, promptInstall } = useInstallPrompt();
-  const [iosHelp, setIosHelp] = useState(false);
+  const [help, setHelp] = useState(false);
   const [loading, setLoading] = useState(false);
 
   if (installed) return null;
+  if (!canNativeInstall && !ios && !isPhone()) return null;
 
   const handleClick = async () => {
     if (canNativeInstall) {
@@ -26,15 +32,8 @@ export function InstallAppButton() {
       }
       return;
     }
-
-    if (ios) {
-      setIosHelp(true);
-      return;
-    }
+    setHelp(true);
   };
-
-  // Hide on desktop browsers that can't install (no native prompt, not iOS)
-  if (!canNativeInstall && !ios) return null;
 
   return (
     <>
@@ -50,18 +49,21 @@ export function InstallAppButton() {
         {canNativeInstall ? t("install.installNow") : t("install.addToHome")}
       </Button>
 
-      {iosHelp && (
-        <Modal open onClose={() => setIosHelp(false)} title={t("install.iosTitle")}>
-          <p className="text-sm text-coco-muted mb-4">{t("install.iosHint")}</p>
+      {help && (
+        <Modal open onClose={() => setHelp(false)} title={ios ? t("install.iosTitle") : t("install.androidTitle")}>
+          <p className="text-sm text-coco-muted mb-4">{ios ? t("install.iosHint") : t("install.subtitle")}</p>
           <ol className="space-y-2">
-            {[t("install.ios1"), t("install.ios2"), t("install.ios3")].map((step, i) => (
+            {(ios
+              ? [t("install.ios1"), t("install.ios2"), t("install.ios3")]
+              : [t("install.android1"), t("install.android2"), t("install.android3")]
+            ).map((step, i) => (
               <li key={i} className="flex items-start gap-2 text-sm text-coco-ink">
-                <span className="font-bold text-coco-green shrink-0">{i + 1}.</span>
+                <span className="font-bold text-coco-leaf shrink-0">{i + 1}.</span>
                 {step}
               </li>
             ))}
           </ol>
-          <Button fullWidth className="mt-5" onClick={() => setIosHelp(false)}>{t("install.gotIt")}</Button>
+          <Button fullWidth className="mt-5" onClick={() => setHelp(false)}>{t("install.gotIt")}</Button>
         </Modal>
       )}
     </>

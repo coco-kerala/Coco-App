@@ -47,7 +47,7 @@ export function WorkerHomeClient({ selectedJobId }) {
             fullWidth
             size="lg"
             className="mt-4 h-14 text-lg"
-            navTo="/worker"
+            navTo="/partner"
             navParams={{ job: firstJob.id }}
           >
             {t("worker.openNextJob")}
@@ -62,7 +62,7 @@ export function WorkerHomeClient({ selectedJobId }) {
                 title={t("worker.noOpenJobs")}
                 description={t("worker.noOpenJobsDesc")}
                 actionLabel={t("worker.viewSampleJob")}
-                navTo="/worker"
+                navTo="/partner"
                 navParams={{ job: "job_1" }}
               />
             </Card>
@@ -74,7 +74,7 @@ export function WorkerHomeClient({ selectedJobId }) {
 
       <JobDetailModal
         jobId={selectedJobId}
-        onClose={() => { window.location.href = "/worker"; }}
+        onClose={() => { window.location.href = "/partner"; }}
       />
     </>
   );

@@ -8,11 +8,14 @@ export default {
   nav: {
     home: "ಮುಖಪುಟ",
     requests: "ವಿನಂತಿಗಳು",
+    bookings: "ಬುಕಿಂಗ್",
     trees: "ಮರಗಳು",
     profile: "ಪ್ರೊಫೈಲ್",
-    jobs: "ನನ್ನ ಕೆಲಸಗಳು",
+    jobs: "ಕೆಲಸಗಳು",
     settings: "ಸೆಟ್ಟಿಂಗ್‌ಗಳು",
     me: "ನಾನು",
+    chat: "ಚಾಟ್",
+    support: "ಸಹಾಯ",
   },
   customer: {
     headline1: "ನಿಮ್ಮ ತೆಂಗಿನ ಮರಗಳಿಗೆ",
@@ -144,7 +147,7 @@ export default {
     noRequestsDesc: "ಮೊದಲ ತೆಂಗಿನಕಾಯಿ ಸೇವೆ ಕೇಳಿ.",
   },
   install: {
-    title: "COCO ಅನ್ನು ಹೋಮ್ ಸ್ಕ್ರೀನ್‌ಗೆ ಸೇರಿಸಿ",
+    title: "KeraGo ಅನ್ನು ಹೋಮ್ ಸ್ಕ್ರೀನ್‌ಗೆ ಸೇರಿಸಿ",
     subtitle: "ತ್ವರಿತ ಪ್ರವೇಶಕ್ಕಾಗಿ ಆ್ಯಪ್ ಇನ್‌ಸ್ಟಾಲ್ ಮಾಡಿ.",
     androidTitle: "Android (Chrome)",
     android1: "Chrome ಮೇಲೆ ಬಲ ಮೆನು (⋮) ಟ್ಯಾಪ್ ಮಾಡಿ",

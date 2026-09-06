@@ -4,17 +4,19 @@
   --coco-green: #1b4d3e;
   --coco-green-dark: #143d32;
   --coco-green-light: #2d6b55;
-  --coco-leaf: #4a9b6e;
-  --coco-leaf-soft: #e8f3ec;
+  /* Coconut palm frond green (warmer / less minty than teal) */
+  --coco-leaf: #3a7d2e;
+  --coco-leaf-soft: #eaf4e6;
   --coco-cream: #f7f3eb;
   --coco-cream-dark: #efe8dc;
   --coco-brown: #a67c52;
+  --coco-shell: #8b5a2b;
   --coco-terracotta: #c4784a;
   --coco-ink: #1a1f1c;
   --coco-muted: #6b736e;
   --coco-border: #e5dfd4;
   --coco-white: #ffffff;
-  --coco-success: #2f8f5b;
+  --coco-success: #3a7d2e;
   --coco-warning: #d4a017;
   --coco-danger: #c44b3c;
   --coco-info: #3a7ca5;
@@ -33,6 +35,7 @@
   --color-coco-cream: var(--coco-cream);
   --color-coco-cream-dark: var(--coco-cream-dark);
   --color-coco-brown: var(--coco-brown);
+  --color-coco-shell: var(--coco-shell);
   --color-coco-terracotta: var(--coco-terracotta);
   --color-coco-ink: var(--coco-ink);
   --color-coco-muted: var(--coco-muted);
@@ -43,6 +46,7 @@
   --color-coco-danger: var(--coco-danger);
   --color-coco-info: var(--coco-info);
   --font-sans: var(--font-jakarta);
+  --font-brand: var(--font-brand);
   --radius-card: 18px;
   --shadow-soft: 0 8px 30px rgba(27, 77, 62, 0.08);
   --shadow-card: 0 4px 20px rgba(26, 31, 28, 0.06);
@@ -62,6 +66,10 @@ body {
   font-family: var(--font-jakarta), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.font-brand {
+  font-family: var(--font-brand), var(--font-jakarta), system-ui, sans-serif;
 }
 
 ::selection {

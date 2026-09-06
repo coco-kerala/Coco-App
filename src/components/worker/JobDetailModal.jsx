@@ -4,13 +4,14 @@ import { useMemo, useState } from "react";
 import { MapPin, Trees, Phone, Navigation } from "lucide-react";
 import { useAppData } from "@/hooks/useAppData";
 import { useT } from "@/contexts/LanguageContext";
-import { getJobById, updateJobStatus } from "@/lib/data/store";
+import { getJobById, getUserById, updateJobStatus } from "@/lib/data/store";
 import { formatCurrency, formatDate, formatTime } from "@/lib/utils";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { PhotoUploader } from "@/components/ui/PhotoUploader";
 import { Modal } from "@/components/ui/Modal";
+import { PaymentAskCard } from "@/components/PaymentAskCard";
 
 const STATUS_FLOW = ["assigned", "on_the_way", "arrived", "in_progress", "completed"];
 
@@ -40,6 +41,7 @@ export function JobDetailModal({ onClose, jobId }) {
   }
 
   const { request } = job;
+  const partner = getUserById(job.worker_id) || request?.worker;
   const currentIdx = STATUS_FLOW.indexOf(job.status);
   const nextStatus = STATUS_FLOW[currentIdx + 1];
   const actionKey = ACTION_KEYS[job.status];
@@ -63,6 +65,13 @@ export function JobDetailModal({ onClose, jobId }) {
       <div className="flex items-center justify-end -mt-2 mb-3">
         <StatusBadge status={job.status} />
       </div>
+
+      {/* Payment first — easy to show home for paying */}
+      <PaymentAskCard
+        amount={request.estimated_price}
+        worker={partner}
+        className="mb-3"
+      />
 
       <Card>
         <div className="flex items-center gap-2 mb-3">

@@ -12,7 +12,7 @@ export function JobCard({ job, className }) {
   const { request } = job;
 
   return (
-    <QueryNavForm action="/worker" params={{ job: job.id }} className="block w-full">
+    <QueryNavForm action="/partner" params={{ job: job.id }} className="block w-full">
       <button type="submit" className="block w-full text-left border-0 bg-transparent p-0 cursor-pointer">
         <Card hover className={cn(className)}>
           <div className="flex items-start justify-between gap-3">

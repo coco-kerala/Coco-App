@@ -27,11 +27,11 @@ export default function RequestsListPage() {
                 title={t("profile.noRequests")}
                 description={t("profile.noRequestsDesc")}
                 actionLabel={t("customer.requestService")}
-                actionHref="/customer?modal=request"
+                actionHref="/user?modal=request"
               />
             </Card>
           ) : (
-            requests.map((r) => <RequestCard key={r.id} request={r} href={`/customer/requests/${r.id}`} />)
+            requests.map((r) => <RequestCard key={r.id} request={r} href={`/user/requests/${r.id}`} />)
           )}
         </div>
       </div>

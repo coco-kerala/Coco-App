@@ -53,7 +53,7 @@ export default function NewRequestPage() {
   const price = calculateServicePrice(treeCount);
 
   const next = () => setStep((s) => Math.min(s + 1, 5));
-  const back = () => { if (step === 1) router.push("/customer"); else setStep((s) => s - 1); };
+  const back = () => { if (step === 1) router.push("/user"); else setStep((s) => s - 1); };
 
   const submit = () => {
     setError("");
@@ -61,7 +61,7 @@ export default function NewRequestPage() {
     setSubmitting(true);
     try {
       const req = createServiceRequest({ customer_id: user.id, property_id: propertyId, tree_count: treeCount, preferred_date: date, preferred_time: time });
-      router.push(`/customer/requests/${req.id}`);
+      router.push(`/user/requests/${req.id}`);
     } catch (e) {
       setError(e.message || "Could not create request");
       setSubmitting(false);

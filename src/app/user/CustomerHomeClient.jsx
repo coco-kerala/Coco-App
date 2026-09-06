@@ -8,6 +8,7 @@ import { useT } from "@/contexts/LanguageContext";
 import { getActiveRequest, getRequestsByCustomer } from "@/lib/data/store";
 import { formatDate, formatTime } from "@/lib/utils";
 import { Logo } from "@/components/brand/Logo";
+import { NotifBell } from "@/components/NotifBell";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { ServiceCard } from "@/components/customer/ServiceCard";
 import { RequestCard } from "@/components/customer/RequestCard";
@@ -40,8 +41,9 @@ export function CustomerHomeClient({ showRequestModal }) {
         <div className="flex items-center justify-between">
           <Logo size="sm" />
           <div className="flex items-center gap-2">
+            <NotifBell href="/user/notifications" />
             <LanguageSwitcher />
-            <div className="h-10 w-10 rounded-full bg-coco-leaf-soft text-coco-green font-bold flex items-center justify-center text-sm">
+            <div className="h-10 w-10 rounded-full bg-coco-leaf-soft text-coco-leaf font-bold flex items-center justify-center text-sm">
               {user.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
             </div>
           </div>
@@ -58,14 +60,14 @@ export function CustomerHomeClient({ showRequestModal }) {
           <ServiceCard />
         </div>
 
-        <Button fullWidth size="lg" className="mt-4" navTo="/customer" navParams={{ modal: "request" }}>
+        <Button fullWidth size="lg" className="mt-4" navTo="/user" navParams={{ modal: "request" }}>
           {t("customer.requestServiceArrow")}
         </Button>
 
         <section className="mt-8">
           <h2 className="text-lg font-bold text-coco-ink mb-3">{t("customer.activeRequest")}</h2>
           {active && !["confirmed", "cancelled"].includes(active.status) ? (
-            <Go href={`/customer/requests/${active.id}`} className="block w-full">
+            <Go href={`/user/requests/${active.id}`} className="block w-full">
               <Card hover>
                 <div className="flex items-start justify-between">
                   <div>
@@ -97,7 +99,7 @@ export function CustomerHomeClient({ showRequestModal }) {
                 title={t("customer.noActiveRequests")}
                 description={t("customer.noActiveDesc")}
                 actionLabel={t("customer.requestService")}
-                navTo="/customer"
+                navTo="/user"
                 navParams={{ modal: "request" }}
               />
             </Card>
@@ -108,11 +110,11 @@ export function CustomerHomeClient({ showRequestModal }) {
           <section className="mt-8 pb-4">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-lg font-bold text-coco-ink">{t("customer.recent")}</h2>
-              <Go href="/customer/requests" className="text-sm font-semibold text-coco-green">{t("customer.seeAll")}</Go>
+              <Go href="/user/requests" className="text-sm font-semibold text-coco-green">{t("customer.seeAll")}</Go>
             </div>
             <div className="space-y-3">
               {recent.map((r) => (
-                <RequestCard key={r.id} request={r} href={`/customer/requests/${r.id}`} />
+                <RequestCard key={r.id} request={r} href={`/user/requests/${r.id}`} />
               ))}
             </div>
           </section>
@@ -121,7 +123,7 @@ export function CustomerHomeClient({ showRequestModal }) {
 
       <RequestServiceModal
         open={showRequestModal}
-        onClose={() => { window.location.href = "/customer"; }}
+        onClose={() => { window.location.href = "/user"; }}
       />
     </>
   );

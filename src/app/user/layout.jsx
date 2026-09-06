@@ -6,6 +6,8 @@ import { LanguagePicker } from "@/components/LanguagePicker";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { BottomNavigation } from "@/components/customer/BottomNavigation";
 import { RequireAuth } from "@/components/RequireAuth";
+import { InstallHomePrompt } from "@/components/InstallHomePrompt";
+import { NotificationPermissionPrompt } from "@/components/NotificationPermissionPrompt";
 
 function LoginShell({ children }) {
   return (
@@ -32,6 +34,8 @@ export default function CustomerLayout({ children }) {
           <div className="min-h-dvh bg-coco-cream">
             <div className="mobile-shell pt-14 pb-28">{children}</div>
             <BottomNavigation />
+            <InstallHomePrompt />
+            <NotificationPermissionPrompt />
           </div>
           <LanguagePicker />
         </RequireAuth>

@@ -1,11 +1,11 @@
 {
-  "name": "COCO",
-  "short_name": "COCO",
-  "description": "Your coconut trees, taken care of.",
+  "name": "KeraGo",
+  "short_name": "KeraGo",
+  "description": "Book coconut tree care near you.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#F7F3EB",
-  "theme_color": "#1B4D3E",
+  "theme_color": "#3A7D2E",
   "orientation": "portrait-primary",
   "icons": [
     {

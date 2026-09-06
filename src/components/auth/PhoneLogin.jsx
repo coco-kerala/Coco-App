@@ -13,13 +13,13 @@ const ROLE_COPY = {
   customer: {
     title: "Book care",
     blurb: "Book coconut plucking for your home or farm.",
-    home: "/customer",
+    home: "/user",
     demoName: "Ananya (demo)",
   },
   worker: {
     title: "Partner",
     blurb: "See your jobs. Go. Finish. Get paid.",
-    home: "/worker",
+    home: "/partner",
     demoName: "Ravi (demo)",
   },
   admin: {
@@ -128,7 +128,7 @@ export function PhoneLogin({ role }) {
             </Button>
             <p className="text-sm text-coco-muted text-center leading-relaxed">
               {role === "worker"
-                ? "COCO office will send you a code on WhatsApp. Enter that code next."
+                ? "KeraGo office will send you a code on WhatsApp. Enter that code next."
                 : role === "admin"
                   ? "You will see the code next — send it on WhatsApp if needed."
                   : "We will WhatsApp you a 6-digit code. Enter it on the next screen."}
@@ -150,7 +150,7 @@ export function PhoneLogin({ role }) {
             {!revealed && (
               <div className="flex items-start gap-3 rounded-2xl bg-amber-50 border border-amber-100 px-4 py-3 text-sm text-amber-900">
                 <MessageCircle size={20} className="shrink-0 mt-0.5" />
-                <span>Open WhatsApp. Find the COCO message. Type the 6 numbers below.</span>
+                <span>Open WhatsApp. Find the KeraGo message. Type the 6 numbers below.</span>
               </div>
             )}
 

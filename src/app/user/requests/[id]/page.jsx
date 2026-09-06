@@ -15,6 +15,8 @@ import { ProgressTimeline } from "@/components/ui/ProgressTimeline";
 import { Rating } from "@/components/ui/Rating";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { PageTransition } from "@/components/PageTransition";
+import { PaymentAskCard } from "@/components/PaymentAskCard";
+import { getUserById } from "@/lib/data/store";
 
 export default function RequestDetailPage({ params }) {
   const { id } = useUnwrapParams(params);
@@ -22,6 +24,10 @@ export default function RequestDetailPage({ params }) {
   const { user } = useAuth();
   const { version, refresh } = useAppData();
   const request = useMemo(() => getRequestById(id), [id, version]);
+  const partner = useMemo(
+    () => (request?.assigned_worker_id ? getUserById(request.assigned_worker_id) : request?.worker),
+    [request, version]
+  );
 
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
@@ -31,7 +37,7 @@ export default function RequestDetailPage({ params }) {
     return (
       <div className="px-5 pt-6">
         <p className="text-coco-muted">Request not found.</p>
-        <Button href="/customer/requests" className="mt-4">Back to requests</Button>
+        <Button href="/user/requests" className="mt-4">Back to requests</Button>
       </div>
     );
   }
@@ -58,29 +64,31 @@ export default function RequestDetailPage({ params }) {
           <StatusBadge status={request.status} />
         </div>
 
-        <Card className="mt-5 space-y-3">
+        <PaymentAskCard
+          amount={request.final_price ?? request.estimated_price}
+          worker={partner}
+          className="mt-5"
+        />
+
+        <Card className="mt-4 space-y-3">
           <Row label="Service" value="Coconut Plucking 🌴" />
           <Row label="Trees" value={`${request.tree_count} trees`} />
           <Row label="Date" value={`${formatDate(request.preferred_date)} · ${formatTime(request.preferred_time)}`} />
           {request.property && <Row label="Location" value={`${request.property.address}, ${request.property.city}`} />}
-          <div className="border-t border-coco-border pt-3 flex items-center justify-between">
-            <span className="text-sm text-coco-muted">Price</span>
-            <span className="text-xl font-extrabold text-coco-ink">{formatCurrency(request.final_price ?? request.estimated_price)}</span>
-          </div>
         </Card>
 
-        {request.worker && (
+        {partner && (
           <Card className="mt-4">
-            <p className="text-xs font-bold text-coco-muted uppercase tracking-wide mb-2">Worker</p>
+            <p className="text-xs font-bold text-coco-muted uppercase tracking-wide mb-2">Partner</p>
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-full bg-coco-leaf-soft text-coco-green flex items-center justify-center font-bold text-sm">
-                {request.worker.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                {partner.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
               </div>
               <div className="flex-1">
-                <p className="font-bold text-coco-ink">{request.worker.name}</p>
-                <p className="text-sm text-coco-muted">{request.worker.phone}</p>
+                <p className="font-bold text-coco-ink">{partner.name}</p>
+                <p className="text-sm text-coco-muted">{partner.phone}</p>
               </div>
-              <a href={`tel:${request.worker.phone}`} className="h-9 w-9 rounded-full bg-coco-green text-white flex items-center justify-center">
+              <a href={`tel:${partner.phone}`} className="h-9 w-9 rounded-full bg-coco-green text-white flex items-center justify-center">
                 <Phone size={16} />
               </a>
             </div>

@@ -142,7 +142,7 @@ export default {
     noRequestsDesc: "আপনার প্রথম নারকেল তোলার সেবা অনুরোধ করুন।",
   },
   install: {
-    title: "COCO হোম স্ক্রিনে যোগ করুন",
+    title: "KeraGo হোম স্ক্রিনে যোগ করুন",
     subtitle: "দ্রুত অ্যাক্সেসের জন্য অ্যাপ ইনস্টল করুন — ফোনে আসল অ্যাপের মতো।",
     androidTitle: "Android (Chrome)",
     android1: "Chrome-এর উপরে ডানদিকে মেনু (⋮) ট্যাপ করুন",

@@ -30,7 +30,7 @@ export default function JobDetailPage({ params }) {
     return (
       <div className="px-5 pt-6">
         <p className="text-coco-muted">Job not found.</p>
-        <Button href="/worker" className="mt-4">Back to jobs</Button>
+        <Button href="/partner" className="mt-4">Back to jobs</Button>
       </div>
     );
   }

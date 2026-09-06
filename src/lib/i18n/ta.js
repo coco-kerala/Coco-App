@@ -8,11 +8,14 @@ export default {
   nav: {
     home: "முகப்பு",
     requests: "கோரிக்கைகள்",
+    bookings: "புக்கிங்",
     trees: "மரங்கள்",
     profile: "சுயவிவரம்",
-    jobs: "என் வேலைகள்",
+    jobs: "வேலைகள்",
     settings: "அமைப்புகள்",
     me: "நான்",
+    chat: "அரட்டை",
+    support: "உதவி",
   },
   customer: {
     headline1: "உங்கள் தென்னை மரங்களுக்கு",
@@ -144,7 +147,7 @@ export default {
     noRequestsDesc: "முதல் தேங்காய் பறித்தலை கோருங்கள்.",
   },
   install: {
-    title: "COCO-வை முகப்பில் சேர்",
+    title: "KeraGo-வை முகப்பில் சேர்",
     subtitle: "விரைவாக திறக்க ஆப்பை நிறுவுங்கள்.",
     androidTitle: "Android (Chrome)",
     android1: "Chrome மேல் வலது மெனு (⋮) தட்டவும்",

@@ -10,7 +10,7 @@ export function ServiceCard({ className }) {
   const { t } = useT();
 
   return (
-    <QueryNavForm action="/customer" params={{ modal: "request" }} className="block w-full">
+    <QueryNavForm action="/user" params={{ modal: "request" }} className="block w-full">
       <button type="submit" className="block w-full text-left border-0 bg-transparent p-0 cursor-pointer">
         <Card
           padding="lg"

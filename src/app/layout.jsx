@@ -1,4 +1,4 @@
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Plus_Jakarta_Sans, Fredoka } from "next/font/google";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import { DemoSwitcher } from "@/components/DemoSwitcher";
@@ -10,17 +10,24 @@ const jakarta = Plus_Jakarta_Sans({
   display: "swap",
 });
 
+const brand = Fredoka({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  variable: "--font-brand",
+  display: "swap",
+});
+
 export const metadata = {
-  title: "COCO — Coconut Care",
-  description: "Your coconut trees, taken care of. Hyperlocal coconut plucking and care services.",
-  applicationName: "COCO",
+  title: "KeraGo — Coconut care",
+  description: "Book coconut tree care near you. Simple for homes and partners.",
+  applicationName: "KeraGo",
   manifest: "/manifest.json",
-  appleWebApp: { capable: true, statusBarStyle: "default", title: "COCO" },
+  appleWebApp: { capable: true, statusBarStyle: "default", title: "KeraGo" },
   icons: { icon: "/icons/icon-192.png", apple: "/icons/icon-192.png" },
 };
 
 export const viewport = {
-  themeColor: "#1B4D3E",
+  themeColor: "#3A7D2E",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -29,7 +36,7 @@ export const viewport = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={`${jakarta.variable} font-sans antialiased`}>
+      <body className={`${jakarta.variable} ${brand.variable} font-sans antialiased`}>
         <AuthProvider>
           <DemoSwitcher />
           {children}

@@ -112,7 +112,7 @@ export default function CustomerSettingsPage() {
 
   const doLogout = () => {
     logout();
-    router.replace("/customer/login");
+    router.replace("/user/login");
   };
 
   return (
