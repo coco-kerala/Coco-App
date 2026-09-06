@@ -22,10 +22,6 @@ const AUTH_SESSION = "coco_auth_verified";
 const AUTH_USER_JSON = "coco_auth_user_json";
 const AuthContext = createContext(null);
 
-/** Set in Vercel / .env.local as NEXT_PUBLIC_OFFICE_PASSWORD */
-const OFFICE_PASSWORD =
-  process.env.NEXT_PUBLIC_OFFICE_PASSWORD || "kerago-office";
-
 async function ensureOfficeUser() {
   const data = getAppData();
   let admin = data.users.find((u) => u.role === "admin");
@@ -128,11 +124,8 @@ export function AuthProvider({ children }) {
     return { ok: true, user: result.user };
   }, [persist]);
 
-  /** Office password login (no WhatsApp) */
-  const loginOffice = useCallback(async (password) => {
-    if (String(password || "").trim() !== OFFICE_PASSWORD) {
-      return { ok: false, error: "Wrong password" };
-    }
+  /** Office entry — no password / OTP; anyone with the link can open */
+  const loginOffice = useCallback(async () => {
     const admin = await ensureOfficeUser();
     persist(admin, true);
     return { ok: true, user: admin };

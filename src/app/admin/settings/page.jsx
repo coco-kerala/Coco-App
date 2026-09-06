@@ -22,7 +22,7 @@ export default function AdminSettingsPage() {
           <h2 className="font-bold text-coco-ink">WhatsApp OTP login</h2>
           <p className="text-sm text-coco-muted mt-1">
             Users and partners enter their number. Codes show under{" "}
-            <strong>OTPs</strong> — send them on WhatsApp. Office uses a password (no OTP).
+            <strong>OTPs</strong> — send them on WhatsApp. Office opens with the private link (no password).
           </p>
           <Button className="mt-4" variant="soft" onClick={() => router.push("/admin/otp")}>
             Open OTP inbox
