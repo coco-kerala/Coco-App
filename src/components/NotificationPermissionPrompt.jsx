@@ -7,56 +7,68 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 
+const SESSION_KEY = "kerago_notif_session_dismiss";
+
 /**
- * Once after install prompt: ask phone users to allow notifications.
+ * Ask to allow alerts.
+ * Keeps showing on each visit until permission is granted.
+ * "Later" only hides for this browser session.
  */
-export function NotificationPermissionPrompt({ delayMs = 3500 }) {
+export function NotificationPermissionPrompt({ delayMs = 1400 }) {
   const { t } = useT();
   const { permission, requestPermission } = useNotifications();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
     if (typeof Notification === "undefined") return;
-    if (permission === "granted" || permission === "denied") return;
+    if (permission === "granted") return;
     try {
-      if (localStorage.getItem("kerago_notif_asked") === "1") return;
+      if (sessionStorage.getItem(SESSION_KEY) === "1") return;
     } catch {}
-    const isPhone = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-    if (!isPhone) return;
     const timer = setTimeout(() => setOpen(true), delayMs);
     return () => clearTimeout(timer);
   }, [permission, delayMs]);
 
-  if (!open) return null;
+  if (!open || permission === "granted") return null;
+
+  const softClose = () => {
+    try {
+      sessionStorage.setItem(SESSION_KEY, "1");
+    } catch {}
+    setOpen(false);
+  };
 
   return (
-    <Modal open onClose={() => setOpen(false)} title={t("notif.promptTitle")}>
+    <Modal open onClose={softClose} title={t("notif.promptTitle")}>
       <div className="flex flex-col items-center text-center">
         <div className="h-14 w-14 rounded-full bg-coco-leaf-soft text-coco-leaf flex items-center justify-center mb-3">
           <Bell size={28} />
         </div>
         <p className="text-sm text-coco-muted leading-relaxed">{t("notif.promptBody")}</p>
+        {permission === "denied" ? (
+          <p className="mt-3 text-xs font-semibold text-coco-shell leading-relaxed">
+            {t("notif.deniedHint") || "Alerts are blocked. Open phone Settings → site → allow notifications, then refresh."}
+          </p>
+        ) : (
+          <p className="mt-2 text-xs font-semibold text-coco-shell">
+            {t("notif.keepShowing") || "We will ask again until you allow alerts."}
+          </p>
+        )}
       </div>
       <div className="mt-5 flex flex-col gap-2">
-        <Button
-          fullWidth
-          onClick={async () => {
-            await requestPermission();
-            setOpen(false);
-          }}
-        >
-          {t("notif.allow")}
-        </Button>
-        <Button
-          fullWidth
-          variant="ghost"
-          onClick={() => {
-            try {
-              localStorage.setItem("kerago_notif_asked", "1");
-            } catch {}
-            setOpen(false);
-          }}
-        >
+        {permission !== "denied" && (
+          <Button
+            fullWidth
+            onClick={async () => {
+              const result = await requestPermission();
+              if (result === "granted") setOpen(false);
+              else softClose();
+            }}
+          >
+            {t("notif.allow")}
+          </Button>
+        )}
+        <Button fullWidth variant="ghost" onClick={softClose}>
           {t("notif.later")}
         </Button>
       </div>

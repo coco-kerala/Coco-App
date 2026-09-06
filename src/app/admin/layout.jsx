@@ -3,6 +3,7 @@
 import { RequireOffice } from "@/components/RequireOffice";
 import { AdminSidebar, AdminMobileNav } from "@/components/admin/AdminSidebar";
 import { NotifBell } from "@/components/NotifBell";
+import { InstallHomePrompt } from "@/components/InstallHomePrompt";
 import { NotificationPermissionPrompt } from "@/components/NotificationPermissionPrompt";
 
 export default function AdminLayout({ children }) {
@@ -17,7 +18,8 @@ export default function AdminLayout({ children }) {
           {children}
         </div>
         <AdminMobileNav />
-        <NotificationPermissionPrompt />
+        <InstallHomePrompt delayMs={500} forcePhoneOnly={false} />
+        <NotificationPermissionPrompt delayMs={1600} />
       </div>
     </RequireOffice>
   );
