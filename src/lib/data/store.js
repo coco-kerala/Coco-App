@@ -1,23 +1,12 @@
 "use client";
 
-import {
-  SAMPLE_USERS,
-  SAMPLE_PROPERTIES,
-  SAMPLE_REQUESTS,
-  SAMPLE_JOBS,
-  SAMPLE_PHOTOS,
-  SAMPLE_PAYMENTS,
-  SAMPLE_REVIEWS,
-  WORKER_LOCATIONS,
-} from "./sample-data";
 import { generateId } from "../utils";
 import { calculateServicePrice } from "../pricing";
 import { normalizePhone, generateOtpCode } from "@/lib/auth/otp";
-
-import { isLiveMode, scheduleCloudPush } from "@/lib/data/cloudSync";
+import { scheduleCloudPush } from "@/lib/data/cloudSync";
 import { notifyUser, notifyAdmins } from "@/lib/notifications/notify";
 
-const STORAGE_KEY = "coco_demo_data_v2";
+const STORAGE_KEY = "kerago_app_data_v1";
 
 function getEmptyData() {
   return {
@@ -34,20 +23,7 @@ function getEmptyData() {
 }
 
 function getDefaultData() {
-  // Live (Supabase): start empty — real OTP users + bookings are collected in the cloud.
-  // Demo/local only: seed sample data for offline tryouts.
-  if (isLiveMode()) return getEmptyData();
-  return {
-    users: structuredClone(SAMPLE_USERS),
-    properties: structuredClone(SAMPLE_PROPERTIES),
-    requests: structuredClone(SAMPLE_REQUESTS),
-    jobs: structuredClone(SAMPLE_JOBS),
-    photos: structuredClone(SAMPLE_PHOTOS),
-    payments: structuredClone(SAMPLE_PAYMENTS),
-    reviews: structuredClone(SAMPLE_REVIEWS),
-    workerLocations: structuredClone(WORKER_LOCATIONS),
-    otpSessions: [],
-  };
+  return getEmptyData();
 }
 
 function normalize(data) {
@@ -60,32 +36,35 @@ function normalize(data) {
   if (!data.reviews) data.reviews = [];
   if (!data.workerLocations) data.workerLocations = {};
   if (!Array.isArray(data.otpSessions)) data.otpSessions = [];
-
-  // Only re-seed sample users when not in live mode
-  if (!isLiveMode()) {
-    const defaults = getDefaultData();
-    const userIds = new Set(data.users.map((u) => u.id));
-    for (const u of defaults.users) {
-      if (!userIds.has(u.id)) data.users.push(structuredClone(u));
-    }
-  }
   return data;
 }
 
 function loadData() {
   if (typeof window === "undefined") return getDefaultData();
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    // Migrate away from old demo storage key
+    const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem("coco_demo_data_v2");
     if (!raw) {
       const fresh = getDefaultData();
       localStorage.setItem(STORAGE_KEY, JSON.stringify(fresh));
       return fresh;
     }
-    const parsed = JSON.parse(raw);
-    return normalize(parsed);
+    const parsed = normalize(JSON.parse(raw));
+    // Drop leftover sample seed users from old demos
+    parsed.users = (parsed.users || []).filter((u) => !String(u.id).startsWith("usr_"));
+    parsed.requests = (parsed.requests || []).filter((r) => !String(r.id).startsWith("req_"));
+    parsed.jobs = (parsed.jobs || []).filter((j) => !String(j.id).startsWith("job_"));
+    parsed.properties = (parsed.properties || []).filter((p) => !String(p.id).startsWith("prop_"));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+    try {
+      localStorage.removeItem("coco_demo_data_v2");
+    } catch {}
+    return parsed;
   } catch {
     const fresh = getDefaultData();
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(fresh)); } catch {}
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(fresh));
+    } catch {}
     return fresh;
   }
 }
@@ -97,9 +76,14 @@ function saveData(data) {
   scheduleCloudPush(data);
 }
 
-export function ensureDemoData() {
+export function ensureAppData() {
   if (typeof window === "undefined") return getDefaultData();
   return loadData();
+}
+
+/** @deprecated use ensureAppData */
+export function ensureDemoData() {
+  return ensureAppData();
 }
 
 /** Replace local cache with cloud data (call once on app boot in live mode). */
@@ -135,10 +119,7 @@ export function subscribeToData(callback) {
 }
 
 export function getUserById(id) {
-  const found = loadData().users.find((u) => u.id === id);
-  if (found) return found;
-  if (!isLiveMode()) return SAMPLE_USERS.find((u) => u.id === id);
-  return undefined;
+  return loadData().users.find((u) => u.id === id);
 }
 
 export function updateUserProfile(userId, updates) {

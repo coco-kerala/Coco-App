@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { subscribeToData, replaceAppData, ensureDemoData } from "@/lib/data/store";
+import { subscribeToData, replaceAppData, ensureAppData } from "@/lib/data/store";
 import { isLiveMode, pullCloudData } from "@/lib/data/cloudSync";
 
 export function useAppData() {
@@ -12,17 +12,11 @@ export function useAppData() {
     let cancelled = false;
 
     (async () => {
-      ensureDemoData();
+      ensureAppData();
       if (isLiveMode()) {
         const cloud = await pullCloudData();
-        if (!cancelled && cloud && (cloud.users?.length || cloud.requests?.length || cloud.properties?.length)) {
+        if (!cancelled && cloud) {
           replaceAppData(cloud);
-        } else if (!cancelled && cloud) {
-          // Cloud empty: clear sample seed so live starts clean
-          const local = ensureDemoData();
-          const onlySamples = (local.users || []).length > 0
-            && local.users.every((u) => String(u.id).startsWith("usr_"));
-          if (onlySamples) replaceAppData(cloud);
         }
       }
       if (!cancelled) setReady(true);

@@ -1,8 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useMemo, useState, useEffect } from "react";
-import { SAMPLE_USERS } from "@/lib/data/sample-data";
-import { ensureDemoData, getUserById, updateUserProfile } from "@/lib/data/store";
+import { ensureAppData, getUserById, updateUserProfile } from "@/lib/data/store";
 import {
   requestOtpBackend,
   verifyOtpBackend,
@@ -20,14 +19,14 @@ export function AuthProvider({ children }) {
   const [verified, setVerified] = useState(false);
 
   useEffect(() => {
-    ensureDemoData();
+    ensureAppData();
     try {
       const id = localStorage.getItem(AUTH_KEY);
       const ok = localStorage.getItem(AUTH_SESSION) === "1";
       if (id && ok) {
         const raw = localStorage.getItem(AUTH_USER_JSON);
         const fromJson = raw ? JSON.parse(raw) : null;
-        const found = fromJson || getUserById(id) || SAMPLE_USERS.find((u) => u.id === id);
+        const found = fromJson || getUserById(id);
         if (found) {
           setUser(found);
           setVerified(true);
@@ -53,23 +52,11 @@ export function AuthProvider({ children }) {
     setVerified(!!isVerified);
   }, []);
 
-  const loginAs = useCallback((role) => {
-    const match = SAMPLE_USERS.find((u) => u.role === role) || SAMPLE_USERS[0];
-    const live = getUserById(match.id) || match;
-    persist(live, true);
-  }, [persist]);
-
-  const loginAsUser = useCallback((userId) => {
-    const match = getUserById(userId) || SAMPLE_USERS.find((u) => u.id === userId);
-    if (match) persist(match, true);
-  }, [persist]);
-
   const requestOtp = useCallback(async (phone, role) => {
     const session = await requestOtpBackend({ phone, role });
     return {
       ok: true,
       phone: session.phone_display,
-      // Show OTP on admin login for bootstrap; customer/worker only in Admin → OTPs
       revealOtp: role === "admin" ? session.otp_code : null,
       expiresAt: session.expires_at,
       source: supabaseOtpReady() ? "supabase" : "local",
@@ -113,15 +100,13 @@ export function AuthProvider({ children }) {
       verified,
       isAuthenticated: !!(user && verified),
       supabaseReady: supabaseOtpReady(),
-      loginAs,
-      loginAsUser,
       requestOtp,
       verifyOtp,
       refreshUser,
       updateProfile,
       logout,
     }),
-    [user, loading, verified, loginAs, loginAsUser, requestOtp, verifyOtp, refreshUser, updateProfile, logout]
+    [user, loading, verified, requestOtp, verifyOtp, refreshUser, updateProfile, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

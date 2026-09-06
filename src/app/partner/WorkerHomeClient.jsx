@@ -61,9 +61,6 @@ export function WorkerHomeClient({ selectedJobId }) {
                 compact
                 title={t("worker.noOpenJobs")}
                 description={t("worker.noOpenJobsDesc")}
-                actionLabel={t("worker.viewSampleJob")}
-                navTo="/partner"
-                navParams={{ job: "job_1" }}
               />
             </Card>
           ) : (

@@ -11,11 +11,10 @@ export default function LoginPage() {
     <main className="min-h-dvh flex items-center justify-center bg-coco-cream px-5">
       <Card className="w-full max-w-sm text-center space-y-3">
         <Logo size="lg" className="justify-center" />
-        <h1 className="text-2xl font-extrabold text-coco-ink">Choose your app</h1>
-        <p className="text-sm text-coco-muted">Three separate login links</p>
-        <Button fullWidth onClick={() => router.push("/user/login")}>Book care login</Button>
-        <Button fullWidth variant="outline" onClick={() => router.push("/partner/login")}>Partner login</Button>
-        <Button fullWidth variant="soft" onClick={() => router.push("/admin/login")}>Office login</Button>
+        <h1 className="text-2xl font-extrabold text-coco-ink">Login to KeraGo</h1>
+        <p className="text-sm text-coco-muted">Choose how you use the app</p>
+        <Button fullWidth onClick={() => router.push("/user/login")}>Become a user</Button>
+        <Button fullWidth variant="outline" onClick={() => router.push("/partner/login")}>Become a partner</Button>
       </Card>
     </main>
   );

@@ -18,7 +18,7 @@ const brand = Fredoka({
 
 export const metadata = {
   title: "KeraGo — Coconut care",
-  description: "Book coconut tree care near you. Simple for homes and partners.",
+  description: "Book trained partners for coconut plucking. Simple for homes and farms.",
   applicationName: "KeraGo",
   manifest: "/manifest.json",
   appleWebApp: { capable: true, statusBarStyle: "default", title: "KeraGo" },
