@@ -64,7 +64,7 @@ async function findOrCreateAppUser(supabase, phone, role) {
 
     if (!findErr) {
       const { generateId } = await import("@/lib/utils");
-      const id = generateId(`usr_${role}`);
+      const id = generateId();
       const { data: created, error: createErr } = await supabase
         .from("app_users")
         .insert({

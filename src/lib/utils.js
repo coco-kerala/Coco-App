@@ -39,6 +39,10 @@ export function getGreeting() {
 }
 
 export function generateId(prefix = "id") {
+  // UUIDs match Supabase app_users / live tables (uuid PKs)
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
 }
 
