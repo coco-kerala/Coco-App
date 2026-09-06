@@ -21,8 +21,8 @@ export default function AdminSettingsPage() {
         <Card className="mt-5">
           <h2 className="font-bold text-coco-ink">WhatsApp OTP login</h2>
           <p className="text-sm text-coco-muted mt-1">
-            People enter their number on User / Partner / Office login. Codes show under{" "}
-            <strong>OTPs</strong> — send them on WhatsApp.
+            Users and partners enter their number. Codes show under{" "}
+            <strong>OTPs</strong> — send them on WhatsApp. Office uses a password (no OTP).
           </p>
           <Button className="mt-4" variant="soft" onClick={() => router.push("/admin/otp")}>
             Open OTP inbox

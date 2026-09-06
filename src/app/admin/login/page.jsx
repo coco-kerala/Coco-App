@@ -1,7 +1,7 @@
 "use client";
 
-import { PhoneLogin } from "@/components/auth/PhoneLogin";
+import { OfficeLogin } from "@/components/auth/OfficeLogin";
 
 export default function AdminLoginPage() {
-  return <PhoneLogin role="admin" />;
+  return <OfficeLogin />;
 }

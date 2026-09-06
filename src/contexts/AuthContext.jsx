@@ -1,17 +1,68 @@
 "use client";
 
 import { createContext, useCallback, useContext, useMemo, useState, useEffect } from "react";
-import { ensureAppData, getUserById, updateUserProfile } from "@/lib/data/store";
+import {
+  ensureAppData,
+  getUserById,
+  updateUserProfile,
+  getAppData,
+  replaceAppData,
+} from "@/lib/data/store";
 import {
   requestOtpBackend,
   verifyOtpBackend,
   supabaseOtpReady,
 } from "@/lib/otp/supabaseBackend";
+import { generateId } from "@/lib/utils";
+import { getSupabaseClient } from "@/lib/supabase/client";
+import { isLiveMode } from "@/lib/data/cloudSync";
 
 const AUTH_KEY = "coco_auth_user_id";
 const AUTH_SESSION = "coco_auth_verified";
 const AUTH_USER_JSON = "coco_auth_user_json";
 const AuthContext = createContext(null);
+
+/** Set in Vercel / .env.local as NEXT_PUBLIC_OFFICE_PASSWORD */
+const OFFICE_PASSWORD =
+  process.env.NEXT_PUBLIC_OFFICE_PASSWORD || "kerago-office";
+
+async function ensureOfficeUser() {
+  const data = getAppData();
+  let admin = data.users.find((u) => u.role === "admin");
+  if (admin) return admin;
+
+  admin = {
+    id: generateId(),
+    name: "Office",
+    phone: "office",
+    email: "office@kerago.in",
+    role: "admin",
+    profile_image: null,
+    created_at: new Date().toISOString(),
+  };
+  data.users.push(admin);
+  replaceAppData(data);
+
+  if (isLiveMode()) {
+    const sb = getSupabaseClient();
+    if (sb) {
+      try {
+        await sb.from("app_users").upsert(
+          {
+            id: admin.id,
+            name: admin.name,
+            phone: "office",
+            phone_display: "Office",
+            email: admin.email,
+            role: "admin",
+          },
+          { onConflict: "id" }
+        );
+      } catch {}
+    }
+  }
+  return admin;
+}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -52,22 +103,39 @@ export function AuthProvider({ children }) {
     setVerified(!!isVerified);
   }, []);
 
+  /** WhatsApp OTP — users & partners only */
   const requestOtp = useCallback(async (phone, role) => {
+    if (role === "admin") {
+      throw new Error("Office uses password login, not WhatsApp OTP");
+    }
     const session = await requestOtpBackend({ phone, role });
     return {
       ok: true,
       phone: session.phone_display,
-      revealOtp: role === "admin" ? session.otp_code : null,
+      revealOtp: null,
       expiresAt: session.expires_at,
       source: supabaseOtpReady() ? "supabase" : "local",
     };
   }, []);
 
   const verifyOtp = useCallback(async (phone, role, code) => {
+    if (role === "admin") {
+      return { ok: false, error: "Office uses password login" };
+    }
     const result = await verifyOtpBackend({ phone, role, code });
     if (!result.ok) return result;
     persist(result.user, true);
     return { ok: true, user: result.user };
+  }, [persist]);
+
+  /** Office password login (no WhatsApp) */
+  const loginOffice = useCallback(async (password) => {
+    if (String(password || "").trim() !== OFFICE_PASSWORD) {
+      return { ok: false, error: "Wrong password" };
+    }
+    const admin = await ensureOfficeUser();
+    persist(admin, true);
+    return { ok: true, user: admin };
   }, [persist]);
 
   const refreshUser = useCallback(() => {
@@ -102,11 +170,12 @@ export function AuthProvider({ children }) {
       supabaseReady: supabaseOtpReady(),
       requestOtp,
       verifyOtp,
+      loginOffice,
       refreshUser,
       updateProfile,
       logout,
     }),
-    [user, loading, verified, requestOtp, verifyOtp, refreshUser, updateProfile, logout]
+    [user, loading, verified, requestOtp, verifyOtp, loginOffice, refreshUser, updateProfile, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
