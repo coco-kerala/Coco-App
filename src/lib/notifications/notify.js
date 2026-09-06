@@ -150,35 +150,59 @@ export function subscribeNotifRealtime(userId, onRow) {
   const sb = getSupabaseClient();
   if (!sb) return () => {};
 
-  const channel = sb
-    .channel(`notif:${userId}`)
-    .on(
-      "postgres_changes",
-      { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` },
-      (payload) => {
-        const n = payload.new;
-        if (!n) return;
-        const entry = {
-          id: n.id,
-          userId: n.user_id,
-          title: n.title,
-          body: n.body || "",
-          href: n.href,
-          createdAt: n.created_at,
-          read: !!n.read,
-        };
-        const local = readLocal();
-        if (!local.some((x) => x.id === entry.id)) {
-          local.unshift(entry);
-          writeLocal(local);
+  // Unique name each time — React Strict Mode / multiple hooks must not
+  // re-use a channel that already called subscribe().
+  const name = `notif:${userId}:${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+  let channel = null;
+
+  try {
+    channel = sb
+      .channel(name)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
+          try {
+            const n = payload.new;
+            if (!n) return;
+            const entry = {
+              id: n.id,
+              userId: n.user_id,
+              title: n.title,
+              body: n.body || "",
+              href: n.href,
+              createdAt: n.created_at,
+              read: !!n.read,
+            };
+            const local = readLocal();
+            if (!local.some((x) => x.id === entry.id)) {
+              local.unshift(entry);
+              writeLocal(local);
+            }
+            showBrowser(entry.title, entry.body);
+            onRow?.(entry);
+          } catch (e) {
+            console.warn("[kerago] notif callback:", e);
+          }
         }
-        showBrowser(entry.title, entry.body);
-        onRow?.(entry);
-      }
-    )
-    .subscribe();
+      )
+      .subscribe((status, err) => {
+        if (err) console.warn("[kerago] notif subscribe:", err.message || err);
+        if (status === "CHANNEL_ERROR") console.warn("[kerago] notif channel error");
+      });
+  } catch (e) {
+    console.warn("[kerago] notif realtime skipped:", e?.message || e);
+    return () => {};
+  }
 
   return () => {
-    sb.removeChannel(channel);
+    try {
+      if (channel) sb.removeChannel(channel);
+    } catch {}
   };
 }

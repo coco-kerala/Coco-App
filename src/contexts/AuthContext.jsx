@@ -25,8 +25,17 @@ const AuthContext = createContext(null);
 function ensureOfficeUserSync() {
   try {
     const data = getAppData();
-    const existing = data.users.find((u) => u.role === "admin");
+    // Prefer a real UUID office user; drop old demo id usr_admin_1
+    const existing = data.users.find(
+      (u) => u.role === "admin" && u.id && !String(u.id).startsWith("usr_")
+    );
     if (existing) return existing;
+
+    // Remove stale demo office rows
+    data.users = (data.users || []).filter(
+      (u) => !(u.role === "admin" && String(u.id).startsWith("usr_"))
+    );
+    replaceAppData(data);
   } catch {}
 
   const admin = {
@@ -41,6 +50,7 @@ function ensureOfficeUserSync() {
 
   try {
     const next = getAppData();
+    next.users = (next.users || []).filter((u) => u.role !== "admin");
     next.users.push(admin);
     replaceAppData(next);
   } catch {}

@@ -14,14 +14,18 @@ export function RequireOffice({ children }) {
 
   useEffect(() => {
     if (loading || started.current) return;
-    if (user?.role === "admin") return;
+    // Always refresh if missing, or stuck on old demo office id
+    const needsOffice =
+      user?.role !== "admin" || (user?.id && String(user.id).startsWith("usr_"));
+    if (!needsOffice) return;
     started.current = true;
-    loginOffice().catch(() => {
-      started.current = false;
-    });
+    loginOffice()
+      .catch(() => {
+        started.current = false;
+      });
   }, [loading, user, loginOffice]);
 
-  if (loading || user?.role !== "admin") {
+  if (loading || user?.role !== "admin" || String(user?.id || "").startsWith("usr_")) {
     return <LoadingState />;
   }
 

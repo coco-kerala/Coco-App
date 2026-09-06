@@ -15,7 +15,7 @@ const PERM_ASKED = "kerago_notif_asked";
 
 /**
  * In-app + browser notifications for the logged-in user.
- * Cloud realtime delivers alerts across phones when something happens.
+ * Safe if realtime fails — never crash the page.
  */
 export function useNotifications() {
   const { user } = useAuth();
@@ -28,14 +28,18 @@ export function useNotifications() {
       setItems([]);
       return;
     }
-    const local = getLocalNotificationsForUser(userId);
-    const cloud = await fetchCloudNotifications(userId);
-    const map = new Map();
-    [...cloud, ...local].forEach((n) => map.set(n.id, n));
-    const merged = [...map.values()].sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
-    setItems(merged);
+    try {
+      const local = getLocalNotificationsForUser(userId);
+      const cloud = await fetchCloudNotifications(userId);
+      const map = new Map();
+      [...cloud, ...local].forEach((n) => map.set(n.id, n));
+      const merged = [...map.values()].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      setItems(merged);
+    } catch (e) {
+      console.warn("[kerago] notif reload:", e);
+    }
   }, [userId]);
 
   useEffect(() => {
@@ -45,9 +49,15 @@ export function useNotifications() {
   }, []);
 
   useEffect(() => {
+    if (!userId) return undefined;
     reload();
     const unsubLocal = subscribeNotifLocal(() => reload());
-    const unsubRt = subscribeNotifRealtime(userId, () => reload());
+    let unsubRt = () => {};
+    try {
+      unsubRt = subscribeNotifRealtime(userId, () => reload());
+    } catch (e) {
+      console.warn("[kerago] notif realtime:", e);
+    }
     return () => {
       unsubLocal();
       unsubRt();
@@ -56,7 +66,6 @@ export function useNotifications() {
 
   const add = useCallback(
     async (notif) => {
-      // Prefer notifyUser from mutations; this keeps UI API for manual adds
       const { notifyUser } = await import("@/lib/notifications/notify");
       if (!userId) return null;
       const entry = await notifyUser({
