@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Phone, KeyRound, MessageCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { formatPhoneDisplay, normalizePhone } from "@/lib/auth/otp";
 import { pathForRole } from "@/lib/auth/roles";
+
+const RESEND_COOLDOWN_SEC = 30;
 
 export function PhoneLogin({ role }) {
   const router = useRouter();
@@ -21,7 +23,10 @@ export function PhoneLogin({ role }) {
   const [otp, setOtp] = useState("");
   const [revealed, setRevealed] = useState(null);
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
 
   const title =
     role === "worker" ? t("auth.partnerTitle")
@@ -36,9 +41,16 @@ export function PhoneLogin({ role }) {
       : role === "admin" ? t("auth.officeOtpHint")
         : t("auth.userOtpHint");
 
+  useEffect(() => {
+    if (cooldown <= 0) return undefined;
+    const id = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(id);
+  }, [cooldown]);
+
   const sendOtp = async (e) => {
     e?.preventDefault();
     setError("");
+    setInfo("");
     const n = normalizePhone(phone);
     if (n.length < 10) {
       setError(t("auth.phoneInvalid"));
@@ -49,6 +61,8 @@ export function PhoneLogin({ role }) {
       const res = await requestOtp(phone, role);
       setRevealed(res.revealOtp);
       setStep("otp");
+      setOtp("");
+      setCooldown(RESEND_COOLDOWN_SEC);
     } catch (err) {
       setError(err.message || t("auth.otpFail"));
     } finally {
@@ -56,9 +70,28 @@ export function PhoneLogin({ role }) {
     }
   };
 
+  const resendOtp = async () => {
+    if (cooldown > 0 || resending || loading) return;
+    setError("");
+    setInfo("");
+    setResending(true);
+    try {
+      const res = await requestOtp(phone, role);
+      setRevealed(res.revealOtp);
+      setOtp("");
+      setCooldown(RESEND_COOLDOWN_SEC);
+      setInfo(t("auth.resendDone") || "New code requested. Check admin OTPs / WhatsApp.");
+    } catch (err) {
+      setError(err.message || t("auth.otpFail"));
+    } finally {
+      setResending(false);
+    }
+  };
+
   const confirmOtp = async (e) => {
     e?.preventDefault();
     setError("");
+    setInfo("");
     if (String(otp).trim().length !== 6) {
       setError(t("auth.codeInvalid"));
       return;
@@ -143,12 +176,33 @@ export function PhoneLogin({ role }) {
               />
             </div>
             {error && <p className="text-sm text-coco-danger font-medium">{error}</p>}
+            {info && <p className="text-sm text-coco-leaf font-medium">{info}</p>}
             <Button type="submit" fullWidth size="lg" loading={loading} className="h-14 text-lg">
               {t("auth.openApp")}
             </Button>
+            <Button
+              type="button"
+              fullWidth
+              variant="outline"
+              loading={resending}
+              disabled={cooldown > 0 || loading}
+              onClick={resendOtp}
+              className="h-12"
+            >
+              {cooldown > 0
+                ? (t("auth.resendWait") || "Resend in {{s}}s").replace("{{s}}", String(cooldown))
+                : (t("auth.resendOtp") || "Resend OTP")}
+            </Button>
             <button
               type="button"
-              onClick={() => { setStep("phone"); setOtp(""); setError(""); setRevealed(null); }}
+              onClick={() => {
+                setStep("phone");
+                setOtp("");
+                setError("");
+                setInfo("");
+                setRevealed(null);
+                setCooldown(0);
+              }}
               className="w-full text-base font-semibold text-coco-muted py-2"
             >
               {t("auth.changeNumber")}
