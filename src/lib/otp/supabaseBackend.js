@@ -60,11 +60,22 @@ async function findOrCreateAppUser(supabase, phone, role) {
       .eq("role", role)
       .maybeSingle();
 
-    if (!findErr && existing) return existing;
+    if (!findErr && existing?.id) return existing;
 
-    if (!findErr) {
+    if (!findErr || isMissingTable(findErr)) {
       const { generateId } = await import("@/lib/utils");
       const id = generateId();
+      // Must be a real UUID for app_users / FK
+      if (!/^[0-9a-f-]{36}$/i.test(String(id))) {
+        return {
+          id: null,
+          name: defaultName(role),
+          phone,
+          phone_display: formatPhoneDisplay(phone),
+          role,
+        };
+      }
+
       const { data: created, error: createErr } = await supabase
         .from("app_users")
         .insert({
@@ -77,7 +88,19 @@ async function findOrCreateAppUser(supabase, phone, role) {
         })
         .select("*")
         .single();
-      if (!createErr && created) return created;
+
+      if (!createErr && created?.id) return created;
+
+      // Race: another request created the same phone+role — fetch it
+      if (createErr) {
+        const { data: again } = await supabase
+          .from("app_users")
+          .select("*")
+          .eq("phone", phone)
+          .eq("role", role)
+          .maybeSingle();
+        if (again?.id) return again;
+      }
     }
   } catch {}
 
@@ -126,7 +149,8 @@ export async function requestOtpBackend({ phone, role }) {
       phone: normalized,
       phone_display: formatPhoneDisplay(normalized),
       role,
-      user_id: user.id || null,
+      // Only attach user_id when it exists in app_users (FK). Otherwise null.
+      user_id: user?.id || null,
       user_name: user.name,
       otp_code: otp,
       status: "pending",
@@ -140,20 +164,49 @@ export async function requestOtpBackend({ phone, role }) {
       .single();
 
     if (error) {
+      const msg = String(error.message || "");
       // Older DBs without phone_display — retry without it
-      if (String(error.message || "").includes("phone_display")) {
+      if (msg.includes("phone_display")) {
         const { phone_display: _pd, ...withoutDisplay } = payload;
         const retry = await supabase
           .from("otp_sessions")
           .insert(withoutDisplay)
           .select("*")
           .single();
-        if (retry.error) throw retry.error;
+        if (retry.error) {
+          // FK to wrong table / missing user — save OTP without user_id
+          if (String(retry.error.message || "").includes("otp_sessions_user_id_fkey") || String(retry.error.message || "").includes("foreign key")) {
+            const { user_id: _uid, ...noUser } = withoutDisplay;
+            const again = await supabase.from("otp_sessions").insert({ ...noUser, user_id: null }).select("*").single();
+            if (again.error) throw again.error;
+            return mapSession({
+              ...again.data,
+              phone_display: formatPhoneDisplay(normalized),
+            });
+          }
+          throw retry.error;
+        }
         return mapSession({
           ...retry.data,
           phone_display: formatPhoneDisplay(normalized),
         });
       }
+
+      // FK constraint: user_id not in referenced table — still save the OTP
+      if (msg.includes("otp_sessions_user_id_fkey") || msg.includes("foreign key")) {
+        const { user_id: _uid, ...noUser } = payload;
+        const again = await supabase
+          .from("otp_sessions")
+          .insert({ ...noUser, user_id: null })
+          .select("*")
+          .single();
+        if (again.error) throw again.error;
+        return mapSession({
+          ...again.data,
+          phone_display: formatPhoneDisplay(normalized),
+        });
+      }
+
       throw error;
     }
 
