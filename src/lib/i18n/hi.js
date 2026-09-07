@@ -146,6 +146,9 @@ export default {
     wrongCode: "गलत कोड। फिर कोशिश करें।",
     openApp: "ऐप खोलें",
     changeNumber: "नंबर बदलें",
+    resendOtp: "OTP फिर भेजें",
+    resendWait: "{{s}} सेकंड में फिर भेजें",
+    resendDone: "नया कोड मंगाया गया। Admin OTP / WhatsApp देखें।",
   },
   profile: {
     title: "प्रोफ़ाइल",

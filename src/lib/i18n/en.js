@@ -146,6 +146,9 @@ export default {
     wrongCode: "Wrong code. Try again.",
     openApp: "Open app",
     changeNumber: "Change number",
+    resendOtp: "Resend OTP",
+    resendWait: "Resend in {{s}}s",
+    resendDone: "New code requested. Check admin OTPs / WhatsApp.",
   },
   profile: {
     title: "Profile",

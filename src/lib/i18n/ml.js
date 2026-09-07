@@ -146,6 +146,9 @@ export default {
     wrongCode: "തെറ്റായ കോഡ്. വീണ്ടും ശ്രമിക്കുക.",
     openApp: "ആപ്പ് തുറക്കുക",
     changeNumber: "നമ്പർ മാറ്റുക",
+    resendOtp: "OTP വീണ്ടും അയയ്ക്കുക",
+    resendWait: "{{s}}s-ന് ശേഷം വീണ്ടും",
+    resendDone: "പുതിയ കോഡ് അഭ്യർത്ഥിച്ചു. Admin OTP / WhatsApp നോക്കുക.",
   },
   profile: {
     title: "പ്രൊഫൈൽ",

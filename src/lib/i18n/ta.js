@@ -146,6 +146,9 @@ export default {
     wrongCode: "தவறான குறியீடு. மீண்டும் முயலுங்கள்.",
     openApp: "ஆப் திறக்கவும்",
     changeNumber: "எண்ணை மாற்று",
+    resendOtp: "OTP மீண்டும் அனுப்பு",
+    resendWait: "{{s}}s-ல் மீண்டும்",
+    resendDone: "புதிய குறியீடு கோரப்பட்டது. Admin OTP / WhatsApp பார்க்கவும்.",
   },
   profile: {
     title: "சுயவிவரம்",
