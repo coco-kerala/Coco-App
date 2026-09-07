@@ -123,6 +123,32 @@ function isRlsBlocked(err) {
   return msg.includes("row-level security") || msg.includes("42501");
 }
 
+function phoneVariants(phone) {
+  const n = normalizePhone(phone);
+  const digits = String(phone || "").replace(/\D/g, "");
+  const local10 = n.length === 12 && n.startsWith("91") ? n.slice(2) : digits.length === 10 ? digits : null;
+  return [...new Set([n, digits, local10, local10 ? `91${local10}` : null].filter(Boolean))];
+}
+
+function codesMatch(a, b) {
+  return String(a ?? "").trim() === String(b ?? "").trim();
+}
+
+function isUsableOtp(session) {
+  if (!session) return false;
+  if (session.status === "verified") return false;
+  const exp = new Date(session.expires_at).getTime();
+  if (!Number.isFinite(exp)) return session.status === "pending" || session.status === "sent";
+  // 30s grace for clock skew between devices
+  return exp + 30_000 >= Date.now();
+}
+
+function needsSend(session) {
+  if (!isUsableOtp(session)) return false;
+  return session.status === "pending" || session.status === "sent" || session.status === "expired";
+}
+
+
 /** Create OTP in Supabase so admin can see & WhatsApp it. */
 export async function requestOtpBackend({ phone, role }) {
   const normalized = normalizePhone(phone);
@@ -245,39 +271,50 @@ export async function requestOtpBackend({ phone, role }) {
 export async function listOtpBackend({ status } = {}) {
   if (!isSupabaseConfigured()) {
     const list = localList();
-    if (status === "active") return list.filter((s) => s.status === "pending" || s.status === "sent");
+    if (status === "active") return list.filter((s) => needsSend(s));
     if (status) return list.filter((s) => s.status === status);
     return list;
   }
 
   const supabase = getSupabaseClient();
   try {
-    const nowIso = new Date().toISOString();
-    await supabase
-      .from("otp_sessions")
-      .update({ status: "expired" })
-      .in("status", ["pending", "sent"])
-      .lt("expires_at", nowIso);
-
-    let query = supabase
+    // Fetch recent rows; filter in JS so a bad status enum / expire race
+    // cannot hide fresh OTPs from "Needs send".
+    const { data, error } = await supabase
       .from("otp_sessions")
       .select("*")
       .order("created_at", { ascending: false })
       .limit(100);
+    if (error) throw error;
 
-    if (status === "active") {
-      query = query.in("status", ["pending", "sent"]);
-    } else if (status) {
-      query = query.eq("status", status);
+    let list = (data || []).map(mapSession);
+
+    // Soft-expire only when clearly past TTL (do not wipe usable codes)
+    const now = Date.now();
+    const toExpire = list.filter(
+      (s) =>
+        (s.status === "pending" || s.status === "sent") &&
+        new Date(s.expires_at).getTime() < now - 30_000
+    );
+    if (toExpire.length) {
+      // Best-effort; ignore errors — listing must still work
+      Promise.all(
+        toExpire.map((s) =>
+          supabase.from("otp_sessions").update({ status: "expired" }).eq("id", s.id)
+        )
+      ).catch(() => {});
+      list = list.map((s) =>
+        toExpire.some((x) => x.id === s.id) ? { ...s, status: "expired" } : s
+      );
     }
 
-    const { data, error } = await query;
-    if (error) throw error;
-    return (data || []).map(mapSession);
+    if (status === "active") return list.filter((s) => needsSend(s));
+    if (status) return list.filter((s) => s.status === status);
+    return list;
   } catch (err) {
     console.warn("[OTP] list failed, local fallback:", err?.message || err);
     const list = localList();
-    if (status === "active") return list.filter((s) => s.status === "pending" || s.status === "sent");
+    if (status === "active") return list.filter((s) => needsSend(s) || s.status === "pending" || s.status === "sent");
     if (status) return list.filter((s) => s.status === status);
     return list;
   }
@@ -297,7 +334,7 @@ export async function markOtpSentBackend(otpId) {
       .single();
     if (getErr) throw getErr;
 
-    const nextStatus = current.status === "pending" ? "sent" : current.status;
+    const nextStatus = current.status === "pending" || current.status === "expired" ? "sent" : current.status;
     const { data, error } = await supabase
       .from("otp_sessions")
       .update({
@@ -325,23 +362,31 @@ export async function verifyOtpBackend({ phone, role, code }) {
 
   const supabase = getSupabaseClient();
   try {
-    const { data: session, error } = await supabase
+    const variants = phoneVariants(phone);
+    const { data: rows, error } = await supabase
       .from("otp_sessions")
       .select("*")
-      .eq("phone", normalized)
       .eq("role", role)
-      .eq("otp_code", otp)
-      .in("status", ["pending", "sent"])
+      .in("phone", variants)
       .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .limit(20);
 
     if (error) throw error;
-    if (!session) return { ok: false, error: "Invalid or expired OTP" };
 
-    if (new Date(session.expires_at).getTime() < Date.now()) {
-      await supabase.from("otp_sessions").update({ status: "expired" }).eq("id", session.id);
-      return { ok: false, error: "OTP expired. Request a new one." };
+    const session = (rows || []).find(
+      (s) => codesMatch(s.otp_code, otp) && isUsableOtp(s)
+    );
+
+    if (!session) {
+      // Wrong code vs truly expired
+      const anyCode = (rows || []).find((s) => codesMatch(s.otp_code, otp));
+      if (anyCode?.status === "verified") {
+        return { ok: false, error: "This code was already used. Request a new one." };
+      }
+      if (anyCode && new Date(anyCode.expires_at).getTime() < Date.now()) {
+        return { ok: false, error: "OTP expired. Request a new one." };
+      }
+      return { ok: false, error: "Invalid or expired OTP" };
     }
 
     await supabase
@@ -360,7 +405,9 @@ export async function verifyOtpBackend({ phone, role, code }) {
       );
       if (user?.id) {
         const data = getAppData();
-        const idx = data.users.findIndex((u) => u.id === user.id || (u.phone && u.role === role));
+        const idx = data.users.findIndex(
+          (u) => u.id === user.id || (normalizePhone(u.phone) === normalized && u.role === role)
+        );
         if (idx >= 0) {
           data.users[idx] = { ...data.users[idx], ...user };
         } else {
@@ -394,10 +441,12 @@ export async function verifyOtpBackend({ phone, role, code }) {
         error: "Supabase RLS blocked OTP. Run supabase/fix_otp_rls.sql in SQL Editor.",
       };
     }
-    console.warn("[OTP] verify failed, local fallback:", err?.message || err);
-    return localVerify({ phone: normalized, role, code: otp });
+    console.warn("[OTP] verify failed:", err?.message || err);
+    // Do not silently use a different local OTP — that causes "invalid" vs admin code.
+    return { ok: false, error: err?.message || "Could not verify OTP. Try again." };
   }
 }
+
 
 export function supabaseOtpReady() {
   return isSupabaseConfigured();

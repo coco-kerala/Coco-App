@@ -138,7 +138,7 @@ export default function AdminOtpPage() {
                     <p className="text-3xl font-extrabold tracking-[0.2em] text-coco-ink">{s.otp_code}</p>
                   </div>
                 </div>
-                {(s.status === "pending" || s.status === "sent") && (
+                {(s.status === "pending" || s.status === "sent" || isStillFresh(s)) && (
                   <div className="mt-4 flex flex-wrap gap-2">
                     <Button size="sm" onClick={() => openWhatsApp(s)}>
                       <MessageCircle size={14} /> Send on WhatsApp
@@ -156,6 +156,14 @@ export default function AdminOtpPage() {
       </div>
     </PageTransition>
   );
+}
+
+function isStillFresh(s) {
+  try {
+    return new Date(s.expires_at).getTime() > Date.now() - 30_000 && s.status !== "verified";
+  } catch {
+    return false;
+  }
 }
 
 function StatusPill({ status }) {
